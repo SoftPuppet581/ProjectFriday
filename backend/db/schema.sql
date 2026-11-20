@@ -46,6 +46,7 @@ ALTER TABLE games
   ADD COLUMN IF NOT EXISTS price_formatted VARCHAR(30) NULL,
   ADD COLUMN IF NOT EXISTS price_updated_at DATETIME NULL,
   ADD KEY IF NOT EXISTS idx_games_steam_app (steam_app_id),
+  ADD COLUMN IF NOT EXISTS details_checked TINYINT UNSIGNED NOT NULL DEFAULT 0,
   MODIFY COLUMN description MEDIUMTEXT NULL,
   ADD UNIQUE KEY IF NOT EXISTS uq_games_external_id (external_id),
   ADD KEY IF NOT EXISTS idx_games_rating (rating),

@@ -222,6 +222,31 @@ export async function upsertByExternalId(data) {
   return { action: 'inserted' };
 }
 
+// ---- 상세 정보(설명, 개발사, 배급사) 채우기 (scripts/fillDetails.js 에서만 쓴다) ----
+
+// 이미 설명이 있는 게임은 확인한 것으로 표시한다 (처음 가져올 때 인기 상위만 상세를 받았다)
+export async function markExistingDetailsChecked() {
+  await pool.query('UPDATE games SET details_checked = 1 WHERE description IS NOT NULL');
+}
+
+export async function findNeedingDetails(limit = 1000) {
+  const [rows] = await pool.query(
+    `SELECT id, external_id AS externalId, title, tags, esrb_rating AS esrbRating FROM games
+     WHERE external_id IS NOT NULL AND details_checked = 0 ORDER BY popularity DESC, id ASC LIMIT ?`,
+    [limit],
+  );
+  return rows.map((row) => ({ ...row, tags: row.tags ? JSON.parse(row.tags) : [] }));
+}
+
+// RAWG가 값을 안 주면(null) 이미 저장된 설명과 공식 사이트는 그대로 둔다
+export async function updateDetails(id, { description, officialUrl, developers, publishers }) {
+  await pool.query(
+    `UPDATE games SET description = COALESCE(?, description), official_url = COALESCE(?, official_url),
+       developers = ?, publishers = ?, details_checked = 1 WHERE id = ?`,
+    [description ?? null, officialUrl ?? null, JSON.stringify(developers ?? []), JSON.stringify(publishers ?? []), id],
+  );
+}
+
 // ---- 스토어 링크와 가격 (scripts/enrichStores.js, scripts/refreshPrices.js 에서만 쓴다) ----
 
 // stores가 NULL = 아직 확인 안 함. '[]' = 확인했는데 스토어가 없음

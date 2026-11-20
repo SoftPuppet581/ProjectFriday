@@ -41,6 +41,26 @@ describe('mapStores / steamAppIdFrom', () => {
     ]);
   });
 
+  test('추적용 파라미터를 지운다: Steam은 쿼리 전체, 나머지는 추적 키만', () => {
+    assert.equal(stores.cleanStoreUrl('https://store.steampowered.com/app/3768760/007_First_Light/?curator_clanid=4777282'), 'https://store.steampowered.com/app/3768760/007_First_Light/');
+    assert.equal(stores.cleanStoreUrl('https://store.steampowered.com/app/1/?l=koreana#reviews'), 'https://store.steampowered.com/app/1/');
+    assert.equal(
+      stores.cleanStoreUrl('https://store.epicgames.com/p/game?utm_source=x&utm_medium=y&lang=ko&fbclid=abc&ref=home'),
+      'https://store.epicgames.com/p/game?lang=ko', // 언어 같은 의미 있는 파라미터는 남긴다
+    );
+    assert.equal(stores.cleanStoreUrl('https://store.playstation.com/en-ca/product/EP1004_00'), 'https://store.playstation.com/en-ca/product/EP1004_00');
+    assert.equal(stores.cleanStoreUrl('not a url'), 'not a url');
+  });
+
+  test('mapStores는 정리한 뒤의 주소로 중복을 판단하고 정리된 주소를 돌려준다', () => {
+    const result = stores.mapStores([
+      { store_id: 1, url: 'https://store.steampowered.com/app/10/Name/?curator_clanid=1' },
+      { store_id: 1, url: 'https://store.steampowered.com/app/10/Name/' },
+    ]);
+    assert.deepEqual(result, [{ name: 'Steam', url: 'https://store.steampowered.com/app/10/Name/' }]);
+    assert.equal(stores.steamAppIdFrom(result), 10);
+  });
+
   test('값이 이상해도 에러 없이 빈 배열', () => {
     assert.deepEqual(stores.mapStores(undefined), []);
     assert.deepEqual(stores.mapStores(null), []);
