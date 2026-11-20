@@ -3,6 +3,7 @@
 ProjectFriday 작업 할당 및 보고 문서입니다. 팀장이 각 팀원의 라인에 업무를 할당하고, 팀원은 자기 라인에 진행 상황을 보고합니다.
 
 - 레포: https://github.com/SoftPuppet581/ProjectFriday (public)
+- 범위: 홈페이지 개발까지만 (바이브 코딩 실습, 세부 주제는 모호하게 둠)
 - 팀장: (이름 작성)
 - 팀원: 4명 (A, B, C, D)
 
