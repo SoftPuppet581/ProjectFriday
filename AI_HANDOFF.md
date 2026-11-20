@@ -13,7 +13,10 @@
 - 팀원 4명은 각자 다른 개인 홈페이지를 따로 만든다. 이 문서는 팀장 프로젝트만 다룬다 (팀원은 팀장 관리 범위 밖)
 - **무엇을 만드나: "게임 정보 홈페이지"**. 실제 게임 정보를 보는 사이트다
 - **달력이 메인 기능**이다. 달력을 중심으로 파생 기능들을 붙인다 (예: 12월 1일 칸을 누르면 그날 출시하는 게임이 열리고, D-day, 상세로 이어진다)
-- 데이터는 가짜가 아니라 RAWG API에서 가져와 DB에 저장한 실제 게임 정보다. **양은 충분하다(약 490개). 더 가져올 필요 없다**
+- 데이터는 가짜가 아니라 RAWG API에서 가져와 DB에 저장한 실제 게임 정보다. **양은 충분하다(480개). 더 가져올 필요 없다**
+- **성인 게임은 전부 제외한다 (팀장 지시).** DB에서 이미 삭제했고, 앞으로 가져올 때도 걸러진다. 성인 게임을 다시 넣거나 화면에 보여 주지 않는다
+- **GTA VI는 이 사이트의 대작이다.** 메인(히어로)의 주인공이고 트레일러가 메인에서 자동 재생된다
+- 게임 뉴스 페이지가 있다 (RSS 6곳에서 가져온 기사 제목, 요약, 썸네일, 원문 링크)
 
 ## 아키텍처
 ```
@@ -41,7 +44,31 @@ RAWG API ──(npm run import, 이미 실행함)──▶ MariaDB ◀── Exp
 
 같은 파일을 동시에 고치지 않는다. API가 바뀌면 docs/API.md와 테스트를 같이 갱신한다.
 
-## Codex 할 일 (위에서부터. 1~5가 되면 시연 가능, 6 이후는 시간이 남을 때)
+## Codex 할 일 (2차, 팀장 요청 5가지. 위에서부터)
+팀장이 정한 방향: **① 존나 깔끔하게(미니멀) ② 메인에 트레일러 자동 재생(멋있게) ③ GTA VI는 대작이니까 메인의 주인공 ④ 뉴스 페이지 추가 ⑤ 성인 게임은 전부 제거(백엔드에서 이미 처리함, 화면 작업 없음)**
+
+새로 쓸 수 있는 것 (Claude 소유 모듈. 수정하지 말고 import해서 쓴다):
+```js
+import { api } from './api/client.js';   // api.featured(), api.listNews({ limit, page, source, lang, q }), api.newsSources()
+import { heroEmbedUrl, trailerInfo } from './lib/trailer.js';
+```
+1. **메인 히어로 = 대작 + 트레일러 자동 재생.** `api.featured()`의 첫 게임(지금은 GTA VI)을 히어로로 쓴다. `heroEmbedUrl(game.trailerUrl)`이 null이 아니면 히어로 배경에 `<iframe allow="autoplay; encrypted-media" title="트레일러" />`로 **음소거 자동 재생·반복**한다. 화면 전체 배경처럼 cover로 깔고, 그 위에 어두운 그라데이션, 제목, 출시일, 플랫폼, "게임 정보 보기" 버튼을 얹는다.
+   - 영상이 로드되기 전, 실패, 없을 때는 `coverImageUrl` 이미지를 보여 준다 (깜빡이거나 검은 화면이 되면 안 됨)
+   - `prefers-reduced-motion`이면 영상 대신 이미지. 모바일(좁은 폭)도 데이터 절약을 위해 이미지로 해도 된다
+   - iframe에 `pointer-events: none`을 줘서 영상이 클릭을 가로채지 않게 한다
+   - 소리 켜기/끄기 버튼은 선택. 자동 재생은 음소거여야만 브라우저가 허용한다
+   - featured가 비어 있거나 영상이 없는 게임이면 이미지 히어로. featured 자체가 없으면 기존 방식(인기작)
+2. **뉴스 페이지.** 상단 메뉴에 "뉴스" 추가. `api.listNews`로 카드 목록(썸네일, 제목, 요약, 매체, 시간). 한국어/English 탭(`lang`), 매체 필터(`api.newsSources()`), 검색(`q`), "더 보기"(`page`).
+   - 카드 클릭은 원문 링크를 **새 탭**(`target="_blank" rel="noopener noreferrer"`)으로
+   - **썸네일이 없는 기사가 있다(루리웹 15건 전부).** 이미지 없는 카드 디자인을 따로 만든다
+   - 하단에 "기사 출처는 각 언론사입니다. 제목과 요약만 보여 주며 원문은 해당 사이트에서 확인하세요." 문구
+   - 게임 상세 화면에 `api.listNews({ q: game.title, limit: 5 })`로 "관련 뉴스"를 넣는다. 결과가 없으면 영역을 숨긴다
+3. **전체 디자인을 깔끔하게(미니멀).** 요소를 줄이고 여백을 늘린다. 지금의 다크 + 주황 포인트 하나를 유지하고, 카드 테두리, 그림자, 장식 아이콘, 배지를 줄인다. 글자 크기는 3~4단계로 통일한다. 달력 칸은 텍스트 칩 대신 썸네일 위주로 단순하게.
+4. **GTA VI(대작) 표시**는 달력과 목록에서 작은 표시 하나만 (과하지 않게). 메인은 1번에서 처리.
+5. **확인**: `npm run build`, 데스크톱과 모바일 폭, 브라우저 콘솔 에러 0개, 영상이 음소거로 자동 재생되는지, 뉴스 링크가 새 탭으로 열리는지.
+
+---
+## [완료] Codex 1차 할 일 (참고용)
 시작 전에 docs/API.md를 읽는다. 아래 모듈을 가져다 쓴다.
 ```js
 import { api } from './api/client.js';      // api.calendar, listGames, getGame, similarGames, genres, platforms, icsUrl
@@ -59,12 +86,14 @@ import { trailerInfo } from './lib/trailer.js';
 8. 검색 → 달력 점프, 관심 게임 별표(`storage.js`), 내 플랫폼만 보기, 임박 배너
 9. 구글 캘린더 추가 링크(`api.icsUrl(id)`), 출시 몰림 히트맵, 두 게임 비교(`ids=1,2`)
 
-## 데이터 현황 (DB에 들어 있는 것, 총 약 490개)
-- 출처는 전부 RAWG. 가짜 샘플은 삭제했다
+## 데이터 현황 (DB에 들어 있는 것: 게임 480개, 뉴스 169건)
+- 출처는 전부 RAWG. 가짜 샘플은 삭제했다. 성인 게임 12개도 삭제했다 (ESRB Adults Only, NSFW/Sexual Content 같은 태그, 선정적인 제목). GTA VI 같은 일반 대작은 남겼다
+- **뉴스 169건** (오늘 가져옴): PC Gamer 49, GameSpot 30, 게임메카 30, 인벤 25, IGN 20, 루리웹 15. 한국어 70건, 영어 99건. 성인 기사는 걸러진다. 서버가 켜질 때와 요청이 올 때 마지막 수집이 30분보다 오래됐으면 뒤에서 새로 가져온다. 지금 바로 새로 가져오려면 `cd backend; npm run news:refresh`
 - 월별: 2026-03/04가 각 60개 이상으로 가장 많고, 2026-11은 67개, 12월 11개. **2027년 이후는 월 10개 미만**으로 거의 없다 (RAWG에 출시 전 게임이 적다). 시연은 2026-03~2026-11 사이 달이 보기 좋다
 - 상세 정보(설명, 개발사)는 인기 상위 일부 게임에만 있다. 없으면 `description: null`, `developers: []`. 화면에서 비어 있어도 깨지지 않게 한다
 - `platforms`가 빈 배열인 게임이 약 50개 있다 (플랫폼 미정). 필터에는 안 잡힌다
-- **트레일러(`trailerUrl`)는 전부 null이다.** RAWG가 영상 데이터를 사실상 주지 않는다(GTA VI도 0개). 그래서 API가 `trailerSearchUrl`(YouTube 검색 링크)을 대신 계산해 주고, `trailerInfo()`가 그걸 `kind: 'search'`로 돌려준다. 영상 플레이어 대신 "트레일러 검색" 버튼으로 표시한다
+- **트레일러(`trailerUrl`)는 GTA VI 하나만 있다.** RAWG가 영상 데이터를 사실상 주지 않아서(GTA VI도 0개) 팀장 지시로 GTA VI만 Rockstar Games 공식 채널의 Trailer 2(YouTube)를 직접 지정했다. 지정할 때 YouTube oEmbed로 퍼가기가 되는지 확인했다 (`backend/db/featured.json`, `npm run db:featured`). 나머지 게임은 `trailerUrl`이 null이고, API가 `trailerSearchUrl`(YouTube 검색 링크)을 대신 계산해 주며 `trailerInfo()`가 그걸 `kind: 'search'`로 돌려준다. 영상 플레이어 대신 "트레일러 검색" 버튼으로 표시한다
+- 메인 대작 목록은 `GET /api/featured`로 받는다 (지금은 GTA VI 하나)
 
 ## 데이터 규칙
 - 데이터 출처는 RAWG(rawg.io). **화면에 "Data from RAWG" 같은 출처 표시와 링크(게임의 sourceUrl)를 넣어야 한다** (RAWG 이용 조건)
@@ -74,23 +103,28 @@ import { trailerInfo } from './lib/trailer.js';
 - RAWG API 키는 backend/.env의 RAWG_API_KEY에만 둔다. 채팅, 문서, 코드, 커밋에 적지 않는다
 
 ## 현재 상태
-- 백엔드 완성 (Claude): games RESTful CRUD, 확장 필드, 페이지네이션(X-Total-Count), 기간/ids/minRating 필터, 달력 요약, 비슷한 게임, .ics, 장르/플랫폼 목록, trailerSearchUrl. 자동 테스트 80개 통과 (`cd backend; npm test`)
+- 백엔드 완성 (Claude): games RESTful CRUD, 확장 필드, 페이지네이션(X-Total-Count), 기간/ids/minRating 필터, 달력 요약, 비슷한 게임, .ics, 장르/플랫폼 목록, trailerSearchUrl. 자동 테스트 101개 통과 (`cd backend; npm test`)
+- 팀장 요청 5가지 중 백엔드 몫 완료 (Claude): 성인 게임 필터와 삭제, 대작 고정 API(`/api/featured`)와 GTA VI 트레일러, 뉴스 수집과 API(`/api/news`, `/api/news/sources`), 재가져오기 때 직접 넣은 값이 지워지던 문제 수정. 남은 건 Codex의 화면 작업(위 "Codex 할 일 2차")
 - RAWG 가져오기 실제 실행 완료. 첫 실행에서 응답 매핑이 맞는 것을 확인했다 (평점, 개발사, 스크린샷, 장르, 플랫폼 정상). 키는 backend/.env에 있다
-- 프론트 비화면 모듈 완성 (Claude): api 클라이언트, 날짜 계산, 저장소, 트레일러 판별. 테스트 26개 통과 (`cd frontend; npm test`)
-- 프론트 화면은 Codex가 만드는 중 (현재는 가짜 데이터로 된 초기 화면, API 호출 아직 없음)
+- 프론트 비화면 모듈 완성 (Claude): api 클라이언트(featured, listNews 추가), 날짜 계산, 저장소, 트레일러 판별(heroEmbedUrl 추가). 테스트 29개 통과 (`cd frontend; npm test`)
+- 프론트 화면 완성 (Codex): 실제 RAWG 데이터로 월간·주간 출시 달력, 날짜별 목록, 게임 탐색·검색, 플랫폼·장르 필터, 상세·트레일러 검색·비슷한 게임, 관심 게임·임박 표시, 두 게임 비교, .ics 파일을 제공한다
+- 게임 포럼: 글과 댓글은 브라우저 localStorage에 저장한다. 여러 기기나 사용자의 게시물을 공유하려면 별도 API가 필요하다
+- 프론트 검증: npm run build 및 npm test 26개 통과. 2026년 11월 API 일정 67건, 주요 UI 동작과 모바일 화면을 브라우저에서 확인했다
 - 실행 스크립트 완성 (Claude): `start.bat`으로 처음부터 6초 만에 3개가 모두 켜지는 것을 확인했고, 재실행(이미 켜진 상태)과 `stop.bat`, DB를 껐다 켜도 데이터(492개)가 보존되는 것도 확인했다
-- 지금 프론트 화면은 Vite 에러 오버레이가 뜬다: `src/main.jsx`가 아직 없는 `./App.jsx`(와 styles.css)를 import한다. Codex가 만드는 중이라 그런 것으로 보이며 start.bat 문제가 아니다
 - index.html(루트)은 미커밋 임시 확인용 파일 (정리 대기)
 
 ## 마지막으로 한 일
 | 날짜 | 도구 | 내용 |
 |------|------|------|
 | 2026-11-20 | Claude Code | 레포 생성, 문서, 백엔드 CRUD, 확장 API, RAWG 가져오기(실행 완료, 약 490개), 테스트, CORS(127.0.0.1) 수정, trailerSearchUrl, 프론트 비화면 모듈 |
+| 2026-11-20 | Codex | React 화면을 실제 RAWG 데이터에 연결하고 출시 달력, 탐색, 게임 상세, 비교와 로컬 포럼 구현. 빌드·테스트 및 데스크톱/모바일 브라우저 확인 |
+| 2026-11-20 | Claude Code | 성인 게임 12개 삭제와 가져올 때 필터, `/api/featured`와 GTA VI 공식 트레일러 지정, 뉴스 수집/API(RSS 6곳, 169건), heroEmbedUrl, 테스트 101개/29개 |
 
 ## 다음 할 일
-- [ ] (Codex) 위 "Codex 할 일" 1~5 먼저, 그다음 6~9
+- [x] (Codex) 출시 달력과 게임 탐색·상세·비교, 포럼 UI를 로컬에서 빌드하고 확인
+- [ ] (Codex) "Codex 할 일 (2차)" 1~5번: 히어로 자동 재생, 뉴스 페이지, 미니멀 디자인
 - [ ] (Claude) Codex 요청이 올라오면 백엔드 수정
-- [ ] (팀장) 마지막에 push, 시연 전에 MariaDB와 백엔드가 켜져 있는지 확인
+- [ ] (팀장) 시연 전에 `start.bat`으로 서비스를 켜고 http://127.0.0.1:5173 에서 확인한 뒤, 필요할 때 직접 push
 - [ ] 임시 index.html 정리 (삭제 여부 팀장 확인)
 
 ## Codex 요청 (Codex가 백엔드/Claude 소유 모듈에 바라는 점을 여기에 적는다)

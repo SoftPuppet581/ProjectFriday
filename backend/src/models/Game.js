@@ -25,6 +25,7 @@ const FIELDS = {
   slug: 'slug',
   sourceUrl: 'source_url',
   source: 'source',
+  featuredOrder: 'featured_order',
 };
 
 // DB에 JSON 문자열로 저장하는 배열 필드
@@ -131,6 +132,18 @@ export async function findAll({ sort = 'releaseDate', limit = 50, offset = 0, ..
   return { items: rows.map(toGame), total };
 }
 
+// 페이지 없이 전부 (정리/검사용 스크립트에서만 쓴다)
+export async function findEveryGame() {
+  const [rows] = await pool.query(`SELECT ${SELECT_COLUMNS} FROM games ORDER BY id`);
+  return rows.map(toGame);
+}
+
+export async function removeMany(ids) {
+  if (!ids.length) return 0;
+  const [result] = await pool.query('DELETE FROM games WHERE id IN (?)', [ids]);
+  return result.affectedRows;
+}
+
 export async function findById(id) {
   const [rows] = await pool.query(`SELECT ${SELECT_COLUMNS} FROM games WHERE id = ?`, [id]);
   return toGame(rows[0]);
@@ -165,16 +178,25 @@ export async function remove(id) {
 // 외부 API 가져오기용: externalId가 같으면 갱신하고 없으면 새로 넣는다
 // 같은 제목+출시일의 다른 게임이 이미 있으면 INSERT가 ER_DUP_ENTRY로 실패한다 (호출한 쪽에서 건너뜀)
 export async function upsertByExternalId(data) {
-  const values = toDbValues(data, true);
   const [[existing]] = await pool.query('SELECT id FROM games WHERE external_id = ?', [data.externalId]);
 
   if (existing) {
-    const [result] = await pool.query('UPDATE games SET ? WHERE id = ?', [values, existing.id]);
+    // 이미 있는 게임은 이번에 받은 필드만 갱신한다. 받지 않은 필드(직접 넣은 트레일러, 대작 고정 순서,
+    // 이번에 상세 정보를 안 가져온 설명 등)는 그대로 둔다.
+    const [result] = await pool.query('UPDATE games SET ? WHERE id = ?', [toDbValues(data, false), existing.id]);
     // changedRows: 값이 실제로 바뀐 행 수 (affectedRows는 변화가 없어도 1로 나온다)
     return { action: result.changedRows > 0 ? 'updated' : 'unchanged' };
   }
-  await pool.query('INSERT INTO games SET ?', [values]);
+  await pool.query('INSERT INTO games SET ?', [toDbValues(data, true)]);
   return { action: 'inserted' };
+}
+
+// 메인 화면(히어로)에 고정해서 보여 줄 대작들. featuredOrder가 작을수록 먼저
+export async function findFeatured() {
+  const [rows] = await pool.query(
+    `SELECT ${SELECT_COLUMNS} FROM games WHERE featured_order IS NOT NULL ORDER BY featured_order ASC, id ASC`,
+  );
+  return rows.map(toGame);
 }
 
 // 달력용: 날짜별 출시 개수와 인기 상위 게임

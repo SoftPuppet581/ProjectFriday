@@ -1,6 +1,7 @@
 // 테스트 공용 설정: 운영 DB가 아닌 테스트 DB를 쓰고, 실제 서버를 임의 포트에 띄운다.
 // db.js가 import되기 전에 DB_NAME을 바꿔야 하므로 app은 setup() 안에서 동적으로 불러온다.
 process.env.DB_NAME = 'game_calendar_test';
+process.env.NEWS_AUTO_REFRESH = 'false'; // 테스트 중에 실제 RSS 서버를 부르지 않는다
 
 import { readFileSync } from 'node:fs';
 import mysql from 'mysql2/promise';

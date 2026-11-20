@@ -64,10 +64,17 @@ describe('mapRawgGame', () => {
     assert.equal(g.source, 'rawg');
   });
 
-  test('상세/영상이 없어도 동작한다', () => {
+  test('상세/영상이 없으면 그 필드는 아예 넣지 않는다 (재가져오기 때 기존 값을 지우지 않기 위해)', () => {
     const g = mapRawgGame(listItem());
+    for (const field of ['description', 'officialUrl', 'developers', 'publishers', 'trailerUrl']) {
+      assert.equal(field in g, false, field);
+    }
+    assert.equal(g.title, 'Fixture Game'); // 목록 정보는 그대로
+  });
+
+  test('상세가 있으면 값이 없는 필드도 null/[]로 채운다', () => {
+    const g = mapRawgGame(listItem(), {});
     assert.equal(g.description, null);
-    assert.equal(g.trailerUrl, null);
     assert.deepEqual(g.developers, []);
   });
 
@@ -118,7 +125,7 @@ describe('importGames', () => {
   test('목록을 읽어 DB에 저장하고, 다시 실행하면 중복 없이 갱신/유지된다', async () => {
     const pages = [[listItem({ id: 1, name: 'G1' }), listItem({ id: 2, name: 'G2' })], [listItem({ id: 3, name: 'G3' })]];
     const first = await run(fakeClient(pages));
-    assert.deepEqual(first, { fetched: 3, inserted: 3, updated: 0, unchanged: 0, skipped: 0 });
+    assert.deepEqual(first, { fetched: 3, inserted: 3, updated: 0, unchanged: 0, skipped: 0, filtered: 0 });
 
     const [[{ n }]] = await ctx.pool.query('SELECT COUNT(*) AS n FROM games');
     assert.equal(n, 3);
@@ -142,6 +149,50 @@ describe('importGames', () => {
     const games = (await ctx.api('GET', '/api/games')).body;
     assert.equal(games.length, 1);
     assert.equal(games[0].rating, 4.5);
+  });
+
+  test('성인 게임은 저장하지 않고 filtered로 센다 (태그, 등급, 제목, 설명)', async () => {
+    const pages = [[
+      listItem({ id: 1, name: 'Good Game' }),
+      listItem({ id: 2, name: 'Tagged', tags: [{ name: 'NSFW' }] }),
+      listItem({ id: 3, name: 'Rated', esrb_rating: { name: 'Adults Only' } }),
+      listItem({ id: 4, name: 'WILD SEX' }),
+      listItem({ id: 5, name: 'Plain Title' }),
+    ]];
+    const client = fakeClient(pages);
+    const origGetGame = client.getGame;
+    // 5번은 목록으로는 평범하지만 상세 설명을 보면 성인물이다
+    client.getGame = async (id) => (id === 5 ? { description_raw: 'A hentai visual novel' } : origGetGame(id));
+
+    const result = await run(client);
+    assert.equal(result.inserted, 1);
+    assert.equal(result.filtered, 4);
+    const titles = (await ctx.api('GET', '/api/games')).body.map((g) => g.title);
+    assert.deepEqual(titles, ['Good Game']);
+  });
+
+  test('목록 정보만으로 걸러진 게임은 상세/영상을 호출하지 않는다', async () => {
+    const client = fakeClient([[listItem({ id: 1, name: 'Tagged', tags: [{ name: 'Hentai' }] })]]);
+    await run(client);
+    assert.equal(client.calls.game, 0);
+    assert.equal(client.calls.movies, 0);
+  });
+
+  test('다시 가져와도 직접 넣은 트레일러, 대작 고정, 이전에 받은 설명은 지워지지 않는다', async () => {
+    await run(fakeClient([[listItem({ id: 1 })]])); // 상세 정보 포함해서 저장 (description 있음)
+    const saved = (await ctx.api('GET', '/api/games')).body[0];
+    assert.equal(saved.description, '설명 본문');
+
+    await ctx.api('PATCH', `/api/games/${saved.id}`, { trailerUrl: 'https://www.youtube.com/watch?v=abcdefghijk', featuredOrder: 1 });
+    const again = await run(fakeClient([[listItem({ id: 1, rating: 3.5 })]]), { details: 0 }); // 이번엔 상세/영상 없이
+    assert.equal(again.updated, 1);
+
+    const after = (await ctx.api('GET', `/api/games/${saved.id}`)).body;
+    assert.equal(after.rating, 3.5); // 목록 정보는 갱신
+    assert.equal(after.trailerUrl, 'https://www.youtube.com/watch?v=abcdefghijk');
+    assert.equal(after.featuredOrder, 1);
+    assert.equal(after.description, '설명 본문');
+    assert.deepEqual(after.developers, ['Dev A']);
   });
 
   test('출시일 미정 게임은 건너뛴다', async () => {

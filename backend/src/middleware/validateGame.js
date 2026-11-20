@@ -61,6 +61,7 @@ const SPEC = {
   externalId: { type: 'positiveInt', message: '1 이상의 정수여야 합니다.' },
   slug: { type: 'text200', message: '200자 이하의 문자열이어야 합니다.' },
   source: { type: 'text50', message: '50자 이하의 문자열이어야 합니다.' },
+  featuredOrder: { type: 'uint', message: '0 이상의 정수여야 합니다. (메인 고정 순서, 작을수록 먼저)' },
 };
 
 // requireAll=true: POST/PUT (필수값 검사), false: PATCH (보낸 필드만 검사)

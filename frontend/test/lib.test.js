@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createApi, ApiError } from '../src/api/client.js';
 import { toIso, parseIso, addDays, monthRange, shiftMonth, weekRange, dDay, monthKey } from '../src/lib/dates.js';
 import { loadFavorites, saveFavorites, toggleFavorite, loadPlatform, savePlatform } from '../src/lib/storage.js';
-import { trailerInfo } from '../src/lib/trailer.js';
+import { trailerInfo, heroEmbedUrl, youtubeId } from '../src/lib/trailer.js';
 
 describe('dates', () => {
   test('toIso/parseIso 왕복', () => {
@@ -129,6 +129,28 @@ describe('trailerInfo', () => {
   });
 });
 
+describe('heroEmbedUrl (메인 자동 재생)', () => {
+  test('YouTube 주소를 음소거 자동 재생 + 반복 퍼가기 주소로 바꾼다', () => {
+    const url = heroEmbedUrl('https://www.youtube.com/watch?v=VQRLujxTm3c');
+    const parsed = new URL(url);
+    assert.equal(parsed.origin + parsed.pathname, 'https://www.youtube-nocookie.com/embed/VQRLujxTm3c');
+    assert.equal(parsed.searchParams.get('autoplay'), '1');
+    assert.equal(parsed.searchParams.get('mute'), '1'); // 음소거가 아니면 브라우저가 자동 재생을 막는다
+    assert.equal(parsed.searchParams.get('loop'), '1');
+    assert.equal(parsed.searchParams.get('playlist'), 'VQRLujxTm3c'); // 반복 재생에 필요
+    assert.equal(parsed.searchParams.get('controls'), '0');
+  });
+
+  test('youtu.be, embed 주소도 처리하고 YouTube가 아니면 null', () => {
+    assert.equal(youtubeId('https://youtu.be/VQRLujxTm3c'), 'VQRLujxTm3c');
+    assert.ok(heroEmbedUrl('https://www.youtube.com/embed/VQRLujxTm3c'));
+    assert.equal(heroEmbedUrl('https://example.com/a.mp4'), null);
+    assert.equal(heroEmbedUrl(null), null);
+    assert.equal(heroEmbedUrl(undefined), null);
+    assert.equal(youtubeId(123), null);
+  });
+});
+
 describe('api client', () => {
   const res = (status, body, headers = {}) => ({
     status,
@@ -206,6 +228,19 @@ describe('api client', () => {
   test('서버가 꺼져 있으면 status 0인 ApiError', async () => {
     const api = createApi({ baseUrl: 'http://test', fetchImpl: async () => { throw new TypeError('fetch failed'); } });
     await assert.rejects(api.genres(), (e) => e instanceof ApiError && e.status === 0 && /백엔드/.test(e.message));
+  });
+
+  test('featured, listNews(헤더의 전체 개수), newsSources', async () => {
+    const { api, calls } = make((url) => (url.includes('/api/news?') ? res(200, [{ id: 1 }], { 'X-Total-Count': '169' }) : res(200, [])));
+    await api.featured();
+    const news = await api.listNews({ lang: 'ko', limit: 5, q: '' });
+    await api.newsSources();
+    assert.deepEqual(news, { items: [{ id: 1 }], total: 169 });
+    assert.deepEqual(calls.map((c) => c.url), [
+      'http://test/api/featured',
+      'http://test/api/news?lang=ko&limit=5',
+      'http://test/api/news/sources',
+    ]);
   });
 
   test('icsUrl', () => {

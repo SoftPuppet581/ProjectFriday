@@ -23,6 +23,7 @@ export const calendarRouter = Router();
 calendarRouter.get('/', parseListQuery, requireDateRange, controller.calendar);
 
 export const metaRouter = Router();
+metaRouter.get('/featured', controller.featured);
 metaRouter.get('/genres', controller.genres);
 metaRouter.get('/platforms', controller.platforms);
 

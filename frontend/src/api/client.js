@@ -66,6 +66,16 @@ export function createApi({ baseUrl = 'http://localhost:3000', fetchImpl = (...a
 
     // 달력 요약: [{ date, count, games: [{ id, title, coverImageUrl, rating }] }]
     calendar: async (params) => (await request('GET', '/api/calendar', { params })).data,
+    // 메인 화면에 고정할 대작들 (순서대로). 트레일러가 있으면 trailerUrl에 YouTube 주소가 들어 있다
+    featured: async () => (await request('GET', '/api/featured')).data,
+
+    // 뉴스 목록: { items, total }. params: { limit, page, source, lang: 'ko'|'en', q }
+    async listNews(params) {
+      const { data, response } = await request('GET', '/api/news', { params });
+      return { items: data, total: Number(response.headers.get('X-Total-Count') ?? data.length) };
+    },
+    newsSources: async () => (await request('GET', '/api/news/sources')).data, // [{ name, language, count }]
+
     genres: async () => (await request('GET', '/api/genres')).data,
     platforms: async () => (await request('GET', '/api/platforms')).data,
 

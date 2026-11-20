@@ -58,6 +58,10 @@ export async function calendar(req, res) {
   res.json(await Game.calendarSummary(req.filters));
 }
 
+export async function featured(req, res) {
+  res.json(await Game.findFeatured());
+}
+
 export async function genres(req, res) {
   res.json(await Game.countByGenre());
 }

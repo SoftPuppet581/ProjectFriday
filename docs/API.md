@@ -44,7 +44,7 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - **항상 있음**: `id`, `title`, `releaseDate`(`YYYY-MM-DD`), `platforms`(배열), `genres`/`tags`/`developers`/`publishers`/`screenshots`(없으면 `[]`)
 - **없으면 `null`**: `genre`, `description`, `trailerUrl`, `coverImageUrl`, `officialUrl`, `rating`, `ratingsCount`, `metacritic`, `esrbRating`, `playtime`, `popularity`, `externalId`, `slug`, `sourceUrl`, `source`
 - `rating`은 0~5 숫자, `popularity`는 클수록 인기(RAWG의 added 수), `playtime`은 시간 단위
-- **`trailerUrl`은 현재 전부 `null`입니다.** RAWG가 영상 데이터를 사실상 주지 않기 때문입니다. 대신 API가 **`trailerSearchUrl`**(YouTube 검색 링크, 저장값이 아니라 계산값)을 항상 같이 돌려줍니다. 직접 판단하지 말고 `frontend/src/lib/trailer.js`의 `trailerInfo(game)`를 쓰세요. 영상이 있으면 video/youtube, 없으면 search 링크를 알려 줍니다.
+- **`trailerUrl`은 GTA VI 하나만 값이 있고(Rockstar 공식 YouTube 주소), 나머지는 `null`입니다.** RAWG가 영상 데이터를 사실상 주지 않기 때문입니다. 대신 API가 **`trailerSearchUrl`**(YouTube 검색 링크, 저장값이 아니라 계산값)을 항상 같이 돌려줍니다. 직접 판단하지 말고 `frontend/src/lib/trailer.js`의 `trailerInfo(game)`를 쓰세요. 영상이 있으면 video/youtube, 없으면 search 링크를 알려 줍니다.
 - 같은 `title` + `releaseDate`는 중복 등록 불가
 
 ## 엔드포인트
@@ -62,6 +62,9 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 | 달력 요약 | `GET /api/calendar?month=2026-12` | 200 + 날짜별 배열 |
 | 장르 목록 | `GET /api/genres` | 200 + `[{ "name": "RPG", "count": 12 }]` (많은 순) |
 | 플랫폼 목록 | `GET /api/platforms` | 200 + `[{ "name": "PC", "count": 30 }]` (많은 순) |
+| 메인 대작 | `GET /api/featured` | 200 + 게임 배열 (`featuredOrder` 순, 지금은 GTA VI 하나) |
+| 뉴스 목록 | `GET /api/news` | 200 + 기사 배열 (최신순), `X-Total-Count` 헤더 |
+| 뉴스 매체 | `GET /api/news/sources` | 200 + `[{ "name": "IGN", "language": "en", "count": 20 }]` |
 | 상태 확인 | `GET /api/health` | 200 `{ "status": "ok" }` |
 
 ### 목록 쿼리 (`GET /api/games`, 모두 선택, 같이 쓰면 AND)
@@ -85,6 +88,27 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 ```
 - 출시작이 있는 날짜만 들어 있습니다. 없는 날은 칸을 비워 두세요.
 - `games`는 인기순 상위 `top`개이고, `count`는 그날의 전체 개수입니다. ("+N개" = `count - games.length`)
+
+## 메인 대작(featured)과 트레일러 자동 재생
+- `GET /api/featured`는 메인 화면에 고정할 게임들을 순서대로 돌려줍니다. 지금은 **Grand Theft Auto VI** 하나이고 `trailerUrl`에 Rockstar Games 공식 채널의 YouTube 주소가 들어 있습니다. (등록할 때 YouTube oEmbed로 퍼가기가 되는지 확인했습니다.)
+- 자동 재생 주소는 직접 만들지 말고 `frontend/src/lib/trailer.js`의 `heroEmbedUrl(game.trailerUrl)`을 쓰세요. 음소거, 자동 재생, 반복 옵션이 들어간 주소를 돌려주고, YouTube가 아니면 `null`입니다.
+- 브라우저는 **음소거 상태에서만** 자동 재생을 허용합니다. 영상이 로드되기 전이나 실패했을 때를 대비해 `coverImageUrl`을 배경으로 깔아 두세요.
+
+## 뉴스 (`GET /api/news`)
+여러 매체의 RSS에서 가져온 **제목, 짧은 요약, 썸네일, 원문 링크**만 저장합니다. 본문은 저장하지 않으니 원문은 `url`로 보내세요 (새 탭).
+```json
+{ "id": 1, "source": "인벤", "language": "ko", "title": "기사 제목", "url": "https://원문주소",
+  "excerpt": "180자 이내 요약 (없으면 null)", "imageUrl": "https://썸네일 (없으면 null)", "publishedAt": "2026-11-20T03:23:14Z" }
+```
+- 쿼리(모두 선택): `limit`(1~100, 기본 20), `page`, `source`(매체 이름 그대로), `lang`(`ko` 또는 `en`), `q`(제목/요약 검색)
+- 최신순이고 전체 개수는 `X-Total-Count` 헤더입니다.
+- **`imageUrl`이 null인 기사가 있습니다** (루리웹은 전부). 이미지 없는 카드 디자인이 필요합니다.
+- `publishedAt`은 UTC입니다. 화면에서 "3시간 전" 같은 상대 시간으로 바꿔 보여 주세요.
+- 매체: 게임메카, 인벤, 루리웹(한국어), IGN, GameSpot, PC Gamer(영어). 성인 기사는 걸러져 있습니다.
+- 게임 상세의 "관련 뉴스"는 `GET /api/news?q=게임제목&limit=5`로 만드세요.
+
+## 성인 게임
+성인 게임은 DB에서 삭제했고 앞으로도 들어오지 않습니다. 화면에서 따로 거를 필요가 없습니다.
 
 ## 기능과 API 대응표
 

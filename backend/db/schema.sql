@@ -35,7 +35,26 @@ ALTER TABLE games
   ADD COLUMN IF NOT EXISTS slug          VARCHAR(200) NULL,
   ADD COLUMN IF NOT EXISTS source_url    VARCHAR(500) NULL,
   ADD COLUMN IF NOT EXISTS source        VARCHAR(20) NULL,
+  ADD COLUMN IF NOT EXISTS featured_order INT UNSIGNED NULL,
+  ADD KEY IF NOT EXISTS idx_games_featured (featured_order),
   MODIFY COLUMN description MEDIUMTEXT NULL,
   ADD UNIQUE KEY IF NOT EXISTS uq_games_external_id (external_id),
   ADD KEY IF NOT EXISTS idx_games_rating (rating),
   ADD KEY IF NOT EXISTS idx_games_popularity (popularity);
+
+-- 게임 뉴스: 여러 언론사 RSS에서 제목, 링크, 짧은 요약, 썸네일만 가져와 저장한다 (본문은 저장하지 않고 원문 링크로 보낸다)
+CREATE TABLE IF NOT EXISTS news (
+  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  source       VARCHAR(50) NOT NULL,
+  language     VARCHAR(5) NOT NULL DEFAULT 'en',
+  title        VARCHAR(300) NOT NULL,
+  url          VARCHAR(500) NOT NULL,
+  excerpt      VARCHAR(500) NULL,
+  image_url    VARCHAR(500) NULL,
+  published_at DATETIME NOT NULL,
+  fetched_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_news_url (url),
+  KEY idx_news_published (published_at),
+  KEY idx_news_source (source)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

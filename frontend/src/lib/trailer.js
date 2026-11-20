@@ -11,6 +11,23 @@
 const YOUTUBE_ID = /(?:youtube\.com\/watch\?(?:[^#]*&)?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/;
 const VIDEO_FILE = /\.(mp4|webm)(\?|#|$)/i;
 
+export function youtubeId(url) {
+  return typeof url === 'string' ? (url.match(YOUTUBE_ID)?.[1] ?? null) : null;
+}
+
+// 메인(히어로)에서 소리 없이 자동 재생·반복할 YouTube 퍼가기 주소. YouTube 주소가 아니면 null.
+// 브라우저 정책상 자동 재생은 음소거(mute=1) 상태에서만 된다. 쓰는 법:
+//   <iframe src={heroEmbedUrl(game.trailerUrl)} allow="autoplay; encrypted-media" title="트레일러" />
+export function heroEmbedUrl(trailerUrl) {
+  const id = youtubeId(trailerUrl);
+  if (!id) return null;
+  const params = new URLSearchParams({
+    autoplay: '1', mute: '1', controls: '0', loop: '1', playlist: id, // loop은 playlist에 같은 id를 넣어야 동작한다
+    playsinline: '1', modestbranding: '1', rel: '0', iv_load_policy: '3', disablekb: '1',
+  });
+  return `https://www.youtube-nocookie.com/embed/${id}?${params}`;
+}
+
 export function trailerInfo(game) {
   const url = game?.trailerUrl;
   if (url) {
