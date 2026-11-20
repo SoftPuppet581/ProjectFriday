@@ -50,6 +50,18 @@ describe('확장 필드', () => {
     assert.equal(game.externalId, 1);
   });
 
+  test('trailerUrl이 없어도 YouTube 검색 링크(trailerSearchUrl)를 계산해 준다', async () => {
+    const created = await api('POST', '/api/games', sample({ title: 'A & B: 100% 게임' }));
+    assert.equal(
+      created.body.trailerSearchUrl,
+      `https://www.youtube.com/results?search_query=${encodeURIComponent('A & B: 100% 게임 official trailer')}`,
+    );
+    assert.equal(created.body.trailerUrl, null);
+    // 저장되는 값이 아니라 계산 값이므로 입력으로는 받지 않는다
+    const bad = await api('POST', '/api/games', sample({ title: 'x', trailerSearchUrl: 'https://a.com' }));
+    assert.equal(bad.status, 400);
+  });
+
   test('직접 입력한 게임은 genre만 넣어도 genres가 채워지고 빈 배열 필드는 []', async () => {
     const created = await api('POST', '/api/games', sample({ genre: 'Puzzle' }));
     assert.deepEqual(created.body.genres, ['Puzzle']);
@@ -244,6 +256,11 @@ describe('CORS', () => {
     const res = await fetch(`${ctx.base}/api/games`, { headers: { Origin: 'http://localhost:5173' } });
     assert.equal(res.headers.get('access-control-allow-origin'), 'http://localhost:5173');
     assert.match(res.headers.get('access-control-expose-headers') ?? '', /X-Total-Count/i);
+  });
+
+  test('Vite가 127.0.0.1로 뜨는 경우도 허용한다', async () => {
+    const res = await fetch(`${ctx.base}/api/games`, { headers: { Origin: 'http://127.0.0.1:5173' } });
+    assert.equal(res.headers.get('access-control-allow-origin'), 'http://127.0.0.1:5173');
   });
 
   test('허용하지 않은 주소에는 CORS 허용 헤더를 주지 않는다', async () => {

@@ -2,8 +2,8 @@
 
 만드는 것: **달력이 중심인 게임 정보 홈페이지**. 실제 게임 데이터는 RAWG에서 미리 가져와 DB에 저장되어 있고, 프론트는 이 API만 호출합니다.
 백엔드는 `http://localhost:3000`에서 실행됩니다. 요청과 응답은 모두 JSON입니다 (`.ics` 제외).
-CORS는 `http://localhost:5173`(Vite 기본 주소)만 허용합니다. 다른 주소를 쓰면 `backend/.env`의 `CORS_ORIGIN`을 바꿔야 합니다.
-Vite를 쓰면 `vite.config`의 `server.proxy`로 `/api`를 `http://localhost:3000`에 연결해도 됩니다.
+CORS는 `http://localhost:5173`과 `http://127.0.0.1:5173` 둘 다 허용합니다. 다른 주소를 쓰면 `backend/.env`의 `CORS_ORIGIN`에 쉼표로 추가해야 합니다.
+API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에러 처리가 이미 되어 있습니다.
 
 ## 실행 방법
 1. MariaDB 실행: `"C:\Program Files\MariaDB 11.8\bin\mariadbd.exe" --console --bind-address=127.0.0.1 --port=3306`
@@ -44,7 +44,7 @@ Vite를 쓰면 `vite.config`의 `server.proxy`로 `/api`를 `http://localhost:30
 - **항상 있음**: `id`, `title`, `releaseDate`(`YYYY-MM-DD`), `platforms`(배열), `genres`/`tags`/`developers`/`publishers`/`screenshots`(없으면 `[]`)
 - **없으면 `null`**: `genre`, `description`, `trailerUrl`, `coverImageUrl`, `officialUrl`, `rating`, `ratingsCount`, `metacritic`, `esrbRating`, `playtime`, `popularity`, `externalId`, `slug`, `sourceUrl`, `source`
 - `rating`은 0~5 숫자, `popularity`는 클수록 인기(RAWG의 added 수), `playtime`은 시간 단위
-- **`trailerUrl`은 대부분 `.mp4` 파일 주소**입니다. `<video controls src=...>`로 재생하세요. 주소가 `youtube.com`이면 `embed/` 주소로 바꿔 `<iframe>`을 쓰세요. 트레일러가 없는 게임이 많으니 `null`이면 영역을 숨기세요.
+- **`trailerUrl`은 현재 전부 `null`입니다.** RAWG가 영상 데이터를 사실상 주지 않기 때문입니다. 대신 API가 **`trailerSearchUrl`**(YouTube 검색 링크, 저장값이 아니라 계산값)을 항상 같이 돌려줍니다. 직접 판단하지 말고 `frontend/src/lib/trailer.js`의 `trailerInfo(game)`를 쓰세요. 영상이 있으면 video/youtube, 없으면 search 링크를 알려 줍니다.
 - 같은 `title` + `releaseDate`는 중복 등록 불가
 
 ## 엔드포인트

@@ -54,6 +54,8 @@ function toGame(row) {
   }
   // 직접 입력한 게임은 genre만 있을 수 있으므로 genres도 채워 준다
   if (game.genres.length === 0 && game.genre) game.genres = [game.genre];
+  // RAWG는 영상 데이터를 거의 주지 않아서, 저장된 trailerUrl이 없을 때 쓸 YouTube 검색 링크를 계산해 준다 (DB에는 저장하지 않음)
+  game.trailerSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${game.title} official trailer`)}`;
   return game;
 }
 
