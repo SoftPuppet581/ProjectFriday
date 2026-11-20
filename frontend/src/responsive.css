@@ -1,0 +1,52 @@
+@media (max-width: 1050px) {
+  .shell { width: calc(100% - 48px); }
+  .header-inner { gap: 12px; }
+  .main-nav button { padding-inline: 9px; }
+  .hero-copy { max-width: 100%; padding-bottom: 75px; }
+}
+
+@media (max-width: 800px) {
+  .shell { width: calc(100% - 32px); }
+  .header-inner { display: grid; grid-template-columns: 1fr minmax(120px, 1fr); padding-top: 10px; gap: 6px 12px; }
+  .main-nav { order: 3; grid-column: 1 / -1; justify-content: space-between; min-height: 43px; gap: 0; }
+  .main-nav button { flex: 1; padding-inline: 4px; font-size: var(--font-meta); }
+  .main-nav button[aria-current]::after { inset-inline: 5px; }
+  .global-search { justify-self: end; width: min(100%, 235px); }
+  .news-search { width: min(260px, 100%); }
+  .main-content { padding-top: 18px; }
+  .hero { min-height: 300px; margin-bottom: 32px; }
+  .hero-copy { padding: 22px 22px 73px; }
+  .hero-controls { right: 14px; bottom: 15px; }
+  .calendar-layout { grid-template-columns: 1fr; }
+  .calendar-day { min-height: 76px; padding-inline: 5px; }
+}
+
+@media (max-width: 570px) {
+  .news-search { width: 100%; }
+}
+
+@media (max-width: 500px) {
+  .shell { width: calc(100% - 24px); }
+  .brand { gap: 7px; }
+  .brand-icon { width: 31px; height: 31px; }
+  .hero { min-height: 270px; }
+  .hero-copy { padding: 18px 16px 65px; }
+  .hero-meta { margin: 12px 0 15px; font-size: var(--font-meta); }
+  .hero-meta time + span { padding-left: 0; border: 0; }
+  .hero::before { background: linear-gradient(0deg, #131313f0 6%, #131313a0 49%, #1313130a 100%); }
+  .hero-controls { right: auto; left: 14px; bottom: 13px; }
+  .section-heading { margin-bottom: 13px; }
+  .heading-inline, .calendar-section .section-heading { gap: 7px; }
+  .calendar-toolbar .filter-row { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; }
+  .calendar-toolbar .filter-select select { min-width: 0; width: 100%; }
+  .date-navigation h3 { min-width: 110px; }
+  .filter-select select { max-width: 131px; }
+  .calendar-day { min-height: 61px; padding: 26px 3px 4px; }
+  .calendar-week .calendar-day { min-height: 95px; }
+  .day-hitbox { padding-inline: 2px; }
+  .day-hitbox time { padding-inline: 3px; }
+  .day-games { gap: 2px; }
+  .day-game { width: calc((100% - 2px) / 2); }
+  .day-game .cover { aspect-ratio: 6 / 5; }
+  .day-more { padding-left: 1px; }
+}

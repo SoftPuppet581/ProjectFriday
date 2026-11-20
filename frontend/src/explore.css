@@ -1,0 +1,88 @@
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 14px; }
+.game-card { position: relative; min-width: 0; overflow: hidden; border-radius: 12px; background: var(--surface); }
+.game-card:hover { background: var(--raised); }
+.game-card-main { display: block; width: 100%; min-width: 0; background: transparent; border: 0; color: inherit; text-align: left; padding: 0; }
+.game-card-main:focus-visible { outline-offset: -3px; }
+.game-card-main > .cover { aspect-ratio: 16 / 9; }
+.game-card-main img { transition: transform .27s ease; }
+.game-card:hover img { transform: scale(1.04); }
+.game-card-copy { display: grid; gap: 5px; min-width: 0; padding: 13px 13px 15px; }
+.game-card-copy strong { font-size: var(--font-body); overflow-wrap: anywhere; }
+.game-card-copy > span { font-size: var(--font-meta); color: var(--muted); }
+.game-card-genre { display: flex; justify-content: space-between; align-items: center; gap: 5px; min-height: 22px; }
+.card-favorite { position: absolute; right: 9px; top: 9px; color: #fff; min-height: 35px; width: 35px; border-color: #ffffff4d; background: #171717df; backdrop-filter: blur(5px); }
+.card-favorite[aria-pressed=true] { color: var(--accent-strong); }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 22px 0 2px; color: var(--muted); }
+
+.dialog { color: inherit; width: min(710px, calc(100% - 24px)); max-height: min(92vh, 900px); margin: auto; border: 1px solid #383838; border-radius: 18px; background: var(--surface); padding: 0;  }
+.dialog::backdrop { background: #090909bc; backdrop-filter: blur(5px); }
+.dialog-inner { position: relative; min-height: 110px; }
+.dialog-close { position: absolute; z-index: 2; right: 13px; top: 13px; background: #242424e6; border-color: #ffffff4d; }
+.detail-hero { position: relative; isolation: isolate; display: flex; align-items: end; min-height: 227px; background: #272727; }
+.detail-hero > .cover { position: absolute; inset: 0; z-index: -2; }
+.detail-hero::before { position: absolute; z-index: -1; inset: 0; content: ""; background: linear-gradient(0deg, #181818 2%, #18181899 48%, #10101015); }
+.detail-title { max-width: 88%; padding: 22px 24px 17px; }
+.detail-title p { color: var(--accent-strong); font-size: var(--font-meta); font-weight: 750; margin-bottom: 6px; }
+.detail-title h2 { font-size: var(--font-section); line-height: 1; letter-spacing: -.055em; overflow-wrap: anywhere; }
+.detail-body { display: grid; gap: 16px; padding: 3px 24px 24px; }
+.detail-metadata { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: var(--font-body); color: var(--muted); }
+.detail-metadata > span:first-child { display: inline-flex; align-items: center; gap: 7px; }
+.detail-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 11px 18px; border-block: 1px solid var(--line); padding-block: 13px; }
+.detail-facts dt { color: var(--muted); font-size: var(--font-meta); margin-bottom: 6px; }
+.detail-facts dd { font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
+.game-description, .thread-body, .replies p { color: #d0cfca; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.trailer { flex-basis: 100%; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 9px; background: #101010; }
+.screenshots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.screenshots img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; }
+.similar { border-top: 1px solid var(--line); padding-top: 14px; }
+.similar h3 { margin-bottom: 5px; font-size: var(--font-body); }
+.similar .game-row { padding-inline: 0; }
+
+.forum-board { overflow: hidden; }
+.forum-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px; border-bottom: 1px solid var(--line); }
+.forum-tabs button { min-height: 34px; background: none; border: 1px solid transparent; border-radius: 6px; padding: 4px 12px; color: var(--muted); font-size: var(--font-body); font-weight: 650; }
+.forum-tabs button:hover { background: #262626; }
+.forum-tabs button[aria-pressed=true] { background: #35281e; border-color: #4a372b; color: var(--accent-strong); }
+.forum-list li + li { border-top: 1px solid var(--line); }
+.thread-row { display: flex; align-items: center; width: 100%; border: 0; background: none; padding: 16px; gap: 13px; text-align: left; }
+.thread-row:hover { background: #232323; }
+.thread-row:focus-visible { outline-offset: -3px; }
+.forum-icon { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; border: 1px solid #3b3b3b; background: #292929; color: #b9b7b2; }
+.thread-copy { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.thread-copy strong { overflow-wrap: anywhere; }
+.thread-copy > span:last-child, .thread time { color: var(--faint); font-size: var(--font-meta); }
+.forum-category { width: fit-content; border-radius: 4px; background: #33271f; color: var(--accent-strong); padding: 2px 6px; font-size: var(--font-meta); font-weight: 700; }
+.thread-count { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-meta); color: var(--muted); }
+.thread { display: grid; gap: 14px; padding: clamp(15px, 3vw, 26px); }
+.thread > .button { justify-self: start; }
+.thread h3 { font-size: var(--font-section); overflow-wrap: anywhere; }
+.thread h4 { margin-top: 9px; }
+.replies { display: grid; gap: 8px; }
+.replies li { background: var(--raised); border-radius: 7px; padding: 9px 12px; }
+.reply-form, .forum-form { display: grid; gap: 10px; }
+.reply-form label, .forum-form label { font-size: var(--font-body); font-weight: 650; }
+.reply-form textarea, .forum-form :is(input, textarea) { width: 100%; color: #fff; background: #121212; border: 1px solid #373737; border-radius: 8px; padding: 9px 11px; }
+.reply-form textarea { min-height: 76px; }
+.reply-form .button, .forum-form .button { justify-self: start; }
+.forum-form { padding: clamp(18px, 4vw, 30px); gap: 14px; }
+.forum-form h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.forum-form label { display: grid; gap: 6px; }
+.forum-form select { width: max-content; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; }
+}
+
+.comparison-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.comparison-bar strong { color: var(--accent-strong); }
+.comparison { padding: 24px; }
+.comparison h2 { padding-right: 44px; margin-bottom: 16px; }
+.comparison-hint { color: var(--muted); margin-bottom: 12px; }
+.comparison table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.comparison :is(th, td) { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; overflow-wrap: anywhere; }
+.comparison th:first-child { width: 24%; color: var(--muted); }
+.comparison thead th { vertical-align: top; }
+.comparison thead th .cover { width: 100%; aspect-ratio: 16 / 9; border-radius: 7px; margin-bottom: 6px; }
+.comparison thead th > span:not(.cover) { display: block; margin-bottom: 6px; }
+.comparison th .icon-button { min-height: 28px; width: 28px; }
