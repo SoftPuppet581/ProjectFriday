@@ -47,6 +47,15 @@ describe('성인 콘텐츠 필터', () => {
     assert.equal(filter.isAdultGame({ title: 'x', description: 'A hentai visual novel' }), true);
   });
 
+  test('은어 제목도 걸러낸다 (Gooning for Gold 사례), 스튜디오 이름은 걸러내지 않는다', () => {
+    for (const title of ['Gooning for Gold', 'Gooner Quest', 'Thicc Girls', 'Femboy Paradise', 'Kinky Dungeon']) {
+      assert.equal(filter.isAdultGame({ title }), true, title);
+    }
+    assert.equal(filter.isAdultText('Naughty Dog가 신작을 공개했다'), false);
+    assert.equal(filter.isAdultText('Jiggly Puff tribute'), false); // jiggle과 비슷하지만 다른 단어
+    assert.equal(filter.isAdultText('The Goonies Remastered'), false); // 영화 제목 (gooning, gooner와 다름)
+  });
+
   test('값이 없어도 에러 없이 false', () => {
     assert.equal(filter.isAdultGame({}), false);
     assert.equal(filter.isAdultGame(null), false);

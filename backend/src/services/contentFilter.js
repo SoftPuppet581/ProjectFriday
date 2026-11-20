@@ -9,6 +9,9 @@ const WORDS = [
   'sex', 'sexy', 'sexual', 'erotic', 'erotica', 'hentai', 'nsfw', 'porn', 'porno', 'nude', 'nudes', 'naked',
   'waifu', 'lust', 'ecchi', 'lewd', 'seduce', 'seduction', 'harem', 'bikini', 'strip', 'stripper', 'flirt',
   'flirting', '18+', 'adult only', 'adults only',
+  // 은어와 노골적인 말 ('naughty'는 Naughty Dog 같은 스튜디오 이름과 겹쳐서 일부러 뺐다)
+  'gooning', 'gooner', 'goon cave', 'booty', 'thicc', 'busty', 'horny', 'kinky', 'fetish', 'bdsm', 'milf', 'futa', 'femboy', 'femboys',
+  'asstethletes', 'assthletes', 'jiggle', 'oppai', 'lewds',
 ];
 const WORD_RE = new RegExp(`(?<![a-z0-9])(?:${WORDS.map(escapeRegex).join('|')})(?![a-z0-9])`, 'i');
 
