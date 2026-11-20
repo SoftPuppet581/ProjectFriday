@@ -23,7 +23,8 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 - MVC: Model = models/Game (DB 쿼리), Controller = controllers/gameController (HTTP 처리), View = React
 - 별도 DTO 계층은 만들지 않는다. 필수값 검증과 일정한 에러 JSON 형식만 한다
 - 배포: Vercel로 Express+MariaDB는 못 돌린다. 오늘은 로컬 실행으로 시연한다. 인터넷 공개는 하지 않는다
-- 설치 필요: Node.js, MariaDB (이 PC에는 Node 없음, MariaDB는 미확인)
+- 설치 위치: Node.js는 C:\Program Files\nodejs, MariaDB는 C:\Program Files\MariaDB 11.8 (이미 열려 있던 터미널은 PATH에 없을 수 있으니 새로 열 것)
+- MariaDB는 윈도우 서비스로 등록되지 않았다. 실행: "C:\Program Files\MariaDB 11.8\bin\mariadbd.exe" --console --bind-address=127.0.0.1 --port=3306 (내 컴퓨터에서만 접속됨)
 
 ## RESTful API 규칙
 | 동작 | 메서드와 URL | 성공 |
@@ -61,7 +62,8 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 | 2026-11-20 | Claude Code | 레포 생성, HandOff.md 작성, AI_HANDOFF.md/CLAUDE.md/AGENTS.md 추가 |
 
 ## 다음 할 일
-- [ ] Node.js, MariaDB 설치 여부 확인 및 설치
+- [x] Node.js, MariaDB 설치 완료 (Node 26.13.1 / npm 11.20.0, MariaDB 11.8.2 LTS)
+- [ ] MariaDB에 프로젝트 전용 DB와 사용자 만들기 (지금은 root가 비밀번호 없이 접속됨. 비밀번호는 이 파일에 적지 않는다)
 - [ ] 프로젝트 뼈대 (backend/ Express, frontend/ React Vite)
 - [ ] games 테이블 설계와 RESTful CRUD 구현
 - [ ] 1단계(핵심) 완성 후 커밋, 이어서 2단계 이후 진행
