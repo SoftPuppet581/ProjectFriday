@@ -18,13 +18,20 @@ export function youtubeId(url) {
 // 메인(히어로)에서 소리 없이 자동 재생·반복할 YouTube 퍼가기 주소. YouTube 주소가 아니면 null.
 // 브라우저 정책상 자동 재생은 음소거(mute=1) 상태에서만 된다. 쓰는 법:
 //   <iframe src={heroEmbedUrl(game.trailerUrl)} allow="autoplay; encrypted-media" title="트레일러" />
-export function heroEmbedUrl(trailerUrl) {
+// 캐러셀처럼 슬라이드를 직접 넘길 때는 { loop: false }를 주면 영상이 끝난 뒤 반복하지 않는다.
+// start(초)를 주면 그 지점부터 재생한다 (인트로를 건너뛰고 하이라이트부터 보여 줄 때).
+export function heroEmbedUrl(trailerUrl, { loop = true, start = 0 } = {}) {
   const id = youtubeId(trailerUrl);
   if (!id) return null;
   const params = new URLSearchParams({
-    autoplay: '1', mute: '1', controls: '0', loop: '1', playlist: id, // loop은 playlist에 같은 id를 넣어야 동작한다
+    autoplay: '1', mute: '1', controls: '0',
     playsinline: '1', modestbranding: '1', rel: '0', iv_load_policy: '3', disablekb: '1',
   });
+  if (loop) {
+    params.set('loop', '1');
+    params.set('playlist', id); // loop은 playlist에 같은 id를 넣어야 동작한다
+  }
+  if (start > 0) params.set('start', String(Math.floor(start)));
   return `https://www.youtube-nocookie.com/embed/${id}?${params}`;
 }
 

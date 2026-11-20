@@ -141,6 +141,16 @@ describe('heroEmbedUrl (메인 자동 재생)', () => {
     assert.equal(parsed.searchParams.get('controls'), '0');
   });
 
+  test('캐러셀용 옵션: loop 끄기, 시작 지점', () => {
+    const noLoop = new URL(heroEmbedUrl('https://www.youtube.com/watch?v=VQRLujxTm3c', { loop: false }));
+    assert.equal(noLoop.searchParams.get('loop'), null);
+    assert.equal(noLoop.searchParams.get('playlist'), null);
+    assert.equal(noLoop.searchParams.get('mute'), '1'); // 자동 재생 조건은 그대로
+    const start = new URL(heroEmbedUrl('https://www.youtube.com/watch?v=VQRLujxTm3c', { start: 12.7 }));
+    assert.equal(start.searchParams.get('start'), '12');
+    assert.equal(new URL(heroEmbedUrl('https://youtu.be/VQRLujxTm3c')).searchParams.get('start'), null);
+  });
+
   test('youtu.be, embed 주소도 처리하고 YouTube가 아니면 null', () => {
     assert.equal(youtubeId('https://youtu.be/VQRLujxTm3c'), 'VQRLujxTm3c');
     assert.ok(heroEmbedUrl('https://www.youtube.com/embed/VQRLujxTm3c'));

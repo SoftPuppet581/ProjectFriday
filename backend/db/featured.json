@@ -3,6 +3,42 @@
     "title": "Grand Theft Auto VI",
     "order": 1,
     "trailerUrl": "https://www.youtube.com/watch?v=VQRLujxTm3c",
-    "note": "Rockstar Games 공식 채널의 Trailer 2. 적용할 때 YouTube oEmbed로 퍼가기 가능 여부를 확인한다."
+    "expectChannel": "Rockstar Games",
+    "note": "Trailer 2. 제작사 공식 채널."
+  },
+  {
+    "title": "Marvel's Wolverine",
+    "order": 2,
+    "trailerUrl": "https://www.youtube.com/watch?v=bxuvfNsyNyE",
+    "expectChannel": "PlayStation",
+    "note": "\"The Best There Is\" Trailer. 퍼블리셔(PlayStation) 공식 채널."
+  },
+  {
+    "title": "Resident Evil 9: Requiem",
+    "order": 3,
+    "trailerUrl": "https://www.youtube.com/watch?v=yClDiMKcPl8",
+    "expectChannel": "IGN",
+    "note": "Official Launch Trailer. 제작사(Capcom) 채널 영상은 못 찾아서 IGN이 올린 공식 트레일러를 썼다."
+  },
+  {
+    "title": "Gears of War: E-Day",
+    "order": 4,
+    "trailerUrl": "https://www.youtube.com/watch?v=-TW2SnAipsE",
+    "expectChannel": "Gears of War",
+    "note": "Official Story Trailer. 제작사 공식 채널."
+  },
+  {
+    "title": "Forza Horizon 6",
+    "order": 5,
+    "trailerUrl": "https://www.youtube.com/watch?v=pWw-UENvdTw",
+    "expectChannel": "Forza",
+    "note": "Official Gameplay Teaser Trailer. 제작사 공식 채널."
+  },
+  {
+    "title": "007 First Light",
+    "order": 6,
+    "trailerUrl": "https://www.youtube.com/watch?v=jLX-T9bOYK0",
+    "expectChannel": "IGN",
+    "note": "Official Trailer | IGN Fan Fest 2026. 제작사(IO Interactive) 채널의 본편 트레일러는 못 찾아서 IGN이 올린 공식 트레일러를 썼다."
   }
 ]

@@ -13,7 +13,7 @@ async function verifyYoutube(url) {
   const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${match[1]}&format=json`);
   if (!res.ok) return { ok: false, info: `퍼가기 확인 실패 (HTTP ${res.status})` };
   const body = await res.json();
-  return { ok: true, info: `${body.title} / ${body.author_name}` };
+  return { ok: true, info: `${body.title} / ${body.author_name}`, author: body.author_name };
 }
 
 const entries = JSON.parse(readFileSync(new URL('../db/featured.json', import.meta.url), 'utf8'));
@@ -32,6 +32,12 @@ try {
       const check = await verifyYoutube(entry.trailerUrl);
       if (!check.ok) {
         console.error(`[실패] "${entry.title}" 트레일러: ${check.info}`);
+        failed = true;
+        continue;
+      }
+      // 주소를 잘못 옮겨 적었거나 영상이 다른 채널 것으로 바뀌었는지 막는다
+      if (entry.expectChannel && check.author && check.author !== entry.expectChannel) {
+        console.error(`[실패] "${entry.title}" 트레일러: 채널이 다릅니다. 기대 "${entry.expectChannel}", 실제 "${check.author}"`);
         failed = true;
         continue;
       }

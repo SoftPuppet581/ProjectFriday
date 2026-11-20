@@ -1,6 +1,7 @@
 // 성인 콘텐츠 필터, 대작 고정(featured), 뉴스 수집/API 테스트. 실제 RSS 서버는 부르지 않고 가짜 응답을 쓴다.
 import { test, describe, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { setup, sample } from './helpers.js';
 
 let ctx;
@@ -50,6 +51,31 @@ describe('성인 콘텐츠 필터', () => {
     assert.equal(filter.isAdultGame({}), false);
     assert.equal(filter.isAdultGame(null), false);
     assert.equal(filter.isAdultText(undefined), false);
+  });
+});
+
+describe('db/featured.json (직접 고른 대작 목록)', () => {
+  const entries = JSON.parse(readFileSync(new URL('../db/featured.json', import.meta.url), 'utf8'));
+
+  test('모든 항목이 형식을 지킨다: 제목, 순서, YouTube 주소, 기대 채널', () => {
+    assert.ok(entries.length >= 1);
+    for (const e of entries) {
+      assert.ok(typeof e.title === 'string' && e.title.trim(), `title: ${JSON.stringify(e)}`);
+      assert.ok(Number.isInteger(e.order) && e.order >= 1, `${e.title} order`);
+      assert.match(e.trailerUrl, /^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/, `${e.title} trailerUrl`);
+      assert.ok(typeof e.expectChannel === 'string' && e.expectChannel, `${e.title} expectChannel (영상 채널 확인용)`);
+    }
+  });
+
+  test('순서와 제목과 영상이 서로 겹치지 않고, 순서는 1부터 끊김 없이 이어진다', () => {
+    const orders = entries.map((e) => e.order).sort((a, b) => a - b);
+    assert.deepEqual(orders, entries.map((_, i) => i + 1));
+    assert.equal(new Set(entries.map((e) => e.title)).size, entries.length);
+    assert.equal(new Set(entries.map((e) => e.trailerUrl)).size, entries.length);
+  });
+
+  test('팬 업로드나 성인물이 섞이지 않게 제목에 성인 단어가 없다', () => {
+    for (const e of entries) assert.equal(filter.isAdultText(e.title), false, e.title);
   });
 });
 

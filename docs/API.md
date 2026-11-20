@@ -44,7 +44,7 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - **항상 있음**: `id`, `title`, `releaseDate`(`YYYY-MM-DD`), `platforms`(배열), `genres`/`tags`/`developers`/`publishers`/`screenshots`(없으면 `[]`)
 - **없으면 `null`**: `genre`, `description`, `trailerUrl`, `coverImageUrl`, `officialUrl`, `rating`, `ratingsCount`, `metacritic`, `esrbRating`, `playtime`, `popularity`, `externalId`, `slug`, `sourceUrl`, `source`
 - `rating`은 0~5 숫자, `popularity`는 클수록 인기(RAWG의 added 수), `playtime`은 시간 단위
-- **`trailerUrl`은 GTA VI 하나만 값이 있고(Rockstar 공식 YouTube 주소), 나머지는 `null`입니다.** RAWG가 영상 데이터를 사실상 주지 않기 때문입니다. 대신 API가 **`trailerSearchUrl`**(YouTube 검색 링크, 저장값이 아니라 계산값)을 항상 같이 돌려줍니다. 직접 판단하지 말고 `frontend/src/lib/trailer.js`의 `trailerInfo(game)`를 쓰세요. 영상이 있으면 video/youtube, 없으면 search 링크를 알려 줍니다.
+- **`trailerUrl`은 메인 대작 6개(`/api/featured`)만 값이 있고(공식 YouTube 주소), 나머지는 `null`입니다.** RAWG가 영상 데이터를 사실상 주지 않기 때문입니다. 대신 API가 **`trailerSearchUrl`**(YouTube 검색 링크, 저장값이 아니라 계산값)을 항상 같이 돌려줍니다. 직접 판단하지 말고 `frontend/src/lib/trailer.js`의 `trailerInfo(game)`를 쓰세요. 영상이 있으면 video/youtube, 없으면 search 링크를 알려 줍니다.
 - 같은 `title` + `releaseDate`는 중복 등록 불가
 
 ## 엔드포인트
@@ -62,7 +62,7 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 | 달력 요약 | `GET /api/calendar?month=2026-12` | 200 + 날짜별 배열 |
 | 장르 목록 | `GET /api/genres` | 200 + `[{ "name": "RPG", "count": 12 }]` (많은 순) |
 | 플랫폼 목록 | `GET /api/platforms` | 200 + `[{ "name": "PC", "count": 30 }]` (많은 순) |
-| 메인 대작 | `GET /api/featured` | 200 + 게임 배열 (`featuredOrder` 순, 지금은 GTA VI 하나) |
+| 메인 대작 | `GET /api/featured` | 200 + 게임 배열 (`featuredOrder` 순, 지금 6개, 모두 `trailerUrl` 있음) |
 | 뉴스 목록 | `GET /api/news` | 200 + 기사 배열 (최신순), `X-Total-Count` 헤더 |
 | 뉴스 매체 | `GET /api/news/sources` | 200 + `[{ "name": "IGN", "language": "en", "count": 20 }]` |
 | 상태 확인 | `GET /api/health` | 200 `{ "status": "ok" }` |
@@ -90,8 +90,18 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - `games`는 인기순 상위 `top`개이고, `count`는 그날의 전체 개수입니다. ("+N개" = `count - games.length`)
 
 ## 메인 대작(featured)과 트레일러 자동 재생
-- `GET /api/featured`는 메인 화면에 고정할 게임들을 순서대로 돌려줍니다. 지금은 **Grand Theft Auto VI** 하나이고 `trailerUrl`에 Rockstar Games 공식 채널의 YouTube 주소가 들어 있습니다. (등록할 때 YouTube oEmbed로 퍼가기가 되는지 확인했습니다.)
-- 자동 재생 주소는 직접 만들지 말고 `frontend/src/lib/trailer.js`의 `heroEmbedUrl(game.trailerUrl)`을 쓰세요. 음소거, 자동 재생, 반복 옵션이 들어간 주소를 돌려주고, YouTube가 아니면 `null`입니다.
+- `GET /api/featured`는 메인 화면(캐러셀)에 고정할 게임들을 순서대로 돌려줍니다. 지금은 아래 6개이고 모두 `trailerUrl`에 YouTube 공식 트레일러 주소가 들어 있습니다. 등록할 때 YouTube로 **퍼가기 가능 여부와 올린 채널**을 확인했습니다.
+
+  | 순서 | 게임 | 올린 채널 |
+  |------|------|-----------|
+  | 1 | Grand Theft Auto VI | Rockstar Games |
+  | 2 | Marvel's Wolverine | PlayStation |
+  | 3 | Resident Evil 9: Requiem | IGN (제작사 채널 영상을 못 찾아서 IGN이 올린 공식 트레일러) |
+  | 4 | Gears of War: E-Day | Gears of War |
+  | 5 | Forza Horizon 6 | Forza |
+  | 6 | 007 First Light | IGN (제작사 채널 영상을 못 찾아서 IGN이 올린 공식 트레일러) |
+
+- 자동 재생 주소는 직접 만들지 말고 `frontend/src/lib/trailer.js`의 `heroEmbedUrl(game.trailerUrl, { loop, start })`을 쓰세요. 음소거와 자동 재생 옵션이 들어간 주소를 돌려주고, YouTube가 아니면 `null`입니다. 캐러셀에서는 `{ loop: false }`를 주고, 현재 보이는 슬라이드 하나만 iframe으로 띄우세요.
 - 브라우저는 **음소거 상태에서만** 자동 재생을 허용합니다. 영상이 로드되기 전이나 실패했을 때를 대비해 `coverImageUrl`을 배경으로 깔아 두세요.
 
 ## 뉴스 (`GET /api/news`)
