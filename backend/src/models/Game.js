@@ -36,6 +36,15 @@ const SELECT_COLUMNS = [
   ...Object.entries(FIELDS).map(([field, column]) => (field === column ? column : `${column} AS ${field}`)),
   'created_at AS createdAt',
   'updated_at AS updatedAt',
+  // 아래는 가져오기/가격 갱신 스크립트만 쓰는 읽기 전용 컬럼이다 (API로 쓰는 필드가 아니라서 FIELDS에 없다. PUT으로 덮어써도 지워지지 않는다)
+  'stores',
+  'steam_app_id AS steamAppId',
+  'price_final AS priceFinal',
+  'price_initial AS priceInitial',
+  'price_discount_percent AS priceDiscountPercent',
+  'price_currency AS priceCurrency',
+  'price_formatted AS priceFormatted',
+  "DATE_FORMAT(price_updated_at, '%Y-%m-%dT%H:%i:%sZ') AS priceUpdatedAt",
 ].join(', ');
 
 const SORT_COLUMNS = {
@@ -57,6 +66,28 @@ function toGame(row) {
   if (game.genres.length === 0 && game.genre) game.genres = [game.genre];
   // RAWG는 영상 데이터를 거의 주지 않아서, 저장된 trailerUrl이 없을 때 쓸 YouTube 검색 링크를 계산해 준다 (DB에는 저장하지 않음)
   game.trailerSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${game.title} official trailer`)}`;
+
+  // 스토어 링크와 가격. 가격은 Steam(원화) 기준이고 Steam에서 팔지 않거나 가격이 없으면 price는 null
+  game.stores = row.stores ? JSON.parse(row.stores) : [];
+  game.price =
+    row.priceFinal === null || row.priceFinal === undefined
+      ? null
+      : {
+          currency: row.priceCurrency,
+          final: row.priceFinal,
+          initial: row.priceInitial ?? row.priceFinal,
+          discountPercent: row.priceDiscountPercent ?? 0,
+          formatted: row.priceFormatted,
+          onSale: (row.priceDiscountPercent ?? 0) > 0,
+          updatedAt: row.priceUpdatedAt,
+        };
+  for (const flat of ['priceFinal', 'priceInitial', 'priceDiscountPercent', 'priceCurrency', 'priceFormatted', 'priceUpdatedAt']) delete game[flat];
+
+  // 바로 가기 링크 (저장값이 아니라 계산값)
+  game.steamStoreUrl = game.steamAppId ? `https://store.steampowered.com/app/${game.steamAppId}/` : null;
+  game.steamClientUrl = game.steamAppId ? `steam://store/${game.steamAppId}` : null; // Steam 앱이 설치되어 있으면 앱에서 열린다
+  game.steamSearchUrl = `https://store.steampowered.com/search/?term=${encodeURIComponent(game.title)}`;
+  game.newsSearchUrl = `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(`${game.title} 게임`)}`;
   return game;
 }
 
@@ -189,6 +220,35 @@ export async function upsertByExternalId(data) {
   }
   await pool.query('INSERT INTO games SET ?', [toDbValues(data, true)]);
   return { action: 'inserted' };
+}
+
+// ---- 스토어 링크와 가격 (scripts/enrichStores.js, scripts/refreshPrices.js 에서만 쓴다) ----
+
+// stores가 NULL = 아직 확인 안 함. '[]' = 확인했는데 스토어가 없음
+export async function findNeedingStores(limit = 1000) {
+  const [rows] = await pool.query(
+    'SELECT id, external_id AS externalId, title FROM games WHERE external_id IS NOT NULL AND stores IS NULL ORDER BY popularity DESC, id ASC LIMIT ?',
+    [limit],
+  );
+  return rows;
+}
+
+export async function updateStores(id, stores, steamAppId) {
+  await pool.query('UPDATE games SET stores = ?, steam_app_id = ? WHERE id = ?', [JSON.stringify(stores), steamAppId ?? null, id]);
+}
+
+export async function findWithSteamApp() {
+  const [rows] = await pool.query('SELECT id, steam_app_id AS steamAppId, title FROM games WHERE steam_app_id IS NOT NULL ORDER BY id');
+  return rows;
+}
+
+// price: { currency, final, initial, discountPercent, formatted } 또는 null (가격 없음). 확인한 시각은 UTC로 남긴다
+export async function updatePrice(id, price) {
+  await pool.query(
+    `UPDATE games SET price_final = ?, price_initial = ?, price_discount_percent = ?, price_currency = ?, price_formatted = ?,
+       price_updated_at = UTC_TIMESTAMP() WHERE id = ?`,
+    [price?.final ?? null, price?.initial ?? null, price?.discountPercent ?? null, price?.currency ?? null, price?.formatted ?? null, id],
+  );
 }
 
 // 메인 화면(히어로)에 고정해서 보여 줄 대작들. featuredOrder가 작을수록 먼저

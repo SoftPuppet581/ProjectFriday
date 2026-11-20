@@ -89,6 +89,30 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - 출시작이 있는 날짜만 들어 있습니다. 없는 날은 칸을 비워 두세요.
 - `games`는 인기순 상위 `top`개이고, `count`는 그날의 전체 개수입니다. ("+N개" = `count - games.length`)
 
+## 스토어 링크, 가격, 바로 가기 링크
+게임 객체에 아래 필드가 항상 들어 있습니다. **전부 읽기 전용**입니다 (API로 쓸 수 없고, `PUT`으로 게임을 덮어써도 지워지지 않습니다).
+```json
+{
+  "stores": [ { "name": "Steam", "url": "https://store.steampowered.com/app/3764200/Resident_Evil_Requiem/" },
+              { "name": "PlayStation Store", "url": "https://store.playstation.com/..." } ],
+  "steamAppId": 3764200,
+  "price": { "currency": "KRW", "final": 79800, "initial": 79800, "discountPercent": 0, "formatted": "₩ 79,800",
+             "onSale": false, "updatedAt": "2026-11-20T04:06:39Z" },
+  "steamStoreUrl": "https://store.steampowered.com/app/3764200/",
+  "steamClientUrl": "steam://store/3764200",
+  "steamSearchUrl": "https://store.steampowered.com/search/?term=...",
+  "newsSearchUrl": "https://search.naver.com/search.naver?where=news&query=..."
+}
+```
+- `stores`: 스토어 이름과 상품 페이지 주소. Steam이 먼저입니다. **없으면 `[]`** (스토어가 하나도 안 알려진 게임이 140개 정도 있습니다)
+- `steamAppId`: Steam 앱 번호. Steam에서 안 파는 게임은 `null`
+- **`price`는 Steam 원화 기준이고, 없으면 `null`("가격 미정")입니다.** 가격이 `null`인 이유는 콘솔 전용(GTA VI, Wolverine 등), 출시 전이라 가격 미공개, Steam 미등록입니다. 가격이 `0`이면 무료 게임입니다(`formatted: "무료"`).
+- `price.initial`은 할인 전 가격, `discountPercent`는 할인율(0~100), `onSale`은 할인 중인지입니다. `updatedAt`은 가격을 확인한 시각(UTC)이고, **가격은 계속 바뀌므로** 화면에 "변동될 수 있음"을 함께 쓰세요.
+- `steamStoreUrl`(Steam 상품 페이지)과 `steamClientUrl`(Steam 앱으로 열기, `steam://` 주소라 Steam이 설치된 PC에서만 열림)은 `steamAppId`가 있을 때만 값이 있고 아니면 `null`입니다.
+- `steamSearchUrl`(Steam 검색 결과)과 `newsSearchUrl`(네이버 뉴스 검색 결과)은 **모든 게임에 항상** 있습니다. 제목으로 만든 검색 링크입니다.
+- 화면에서는 직접 가공하지 말고 `frontend/src/lib/stores.js`의 `formatPrice(game.price)`, `storeLinks(game)`, `steamClientLink(game)`, `newsSearchLink(game)`를 쓰세요.
+- 모든 외부 링크는 새 탭(`target="_blank" rel="noopener noreferrer"`)으로 여세요.
+
 ## 메인 대작(featured)과 트레일러 자동 재생
 - `GET /api/featured`는 메인 화면(캐러셀)에 고정할 게임들을 순서대로 돌려줍니다. 지금은 아래 6개이고 모두 `trailerUrl`에 YouTube 공식 트레일러 주소가 들어 있습니다. 등록할 때 YouTube로 **퍼가기 가능 여부와 올린 채널**을 확인했습니다.
 

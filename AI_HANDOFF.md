@@ -51,8 +51,9 @@ RAWG API ──(npm run import, 이미 실행함)──▶ MariaDB ◀── Exp
 ```js
 import { api } from './api/client.js';   // api.featured(), api.listNews({ limit, page, source, lang, q }), api.newsSources()
 import { heroEmbedUrl, trailerInfo } from './lib/trailer.js';
+import { formatPrice, storeLinks, steamClientLink, newsSearchLink } from './lib/stores.js';   // 가격 표시, 스토어/뉴스 링크
 ```
-1. **메인 히어로 = 대작 트레일러 캐러셀.** `api.featured()`가 돌려주는 대작 6개(GTA VI가 1번째)를 캐러셀 슬라이드로 쓴다. **슬라이드마다 트레일러**가 자동 재생된다 (캐러셀 규칙은 이 항목 끝에 있다). `heroEmbedUrl(game.trailerUrl)`이 null이 아니면 히어로 배경에 `<iframe allow="autoplay; encrypted-media" title="트레일러" />`로 **음소거 자동 재생·반복**한다. 화면 전체 배경처럼 cover로 깔고, 그 위에 어두운 그라데이션, 제목, 출시일, 플랫폼, "게임 정보 보기" 버튼을 얹는다.
+1. **메인 히어로 = 대작 트레일러 캐러셀.** `api.featured()`가 돌려주는 대작 6개(GTA VI가 1번째)를 캐러셀 슬라이드로 쓴다. **슬라이드마다 트레일러**가 자동 재생된다 (캐러셀 규칙은 이 항목 끝에 있다). `heroEmbedUrl(game.trailerUrl, { loop: false })`가 null이 아니면 히어로 배경에 `<iframe allow="autoplay; encrypted-media" title="트레일러" />`로 **음소거 자동 재생**한다. 화면 전체 배경처럼 cover로 깔고, 그 위에 어두운 그라데이션, 제목, 출시일, 플랫폼, "게임 정보 보기" 버튼을 얹는다.
    - 영상이 로드되기 전, 실패, 없을 때는 `coverImageUrl` 이미지를 보여 준다 (깜빡이거나 검은 화면이 되면 안 됨)
    - `prefers-reduced-motion`이면 영상 대신 이미지. 모바일(좁은 폭)도 데이터 절약을 위해 이미지로 해도 된다
    - iframe에 `pointer-events: none`을 줘서 영상이 클릭을 가로채지 않게 한다
@@ -72,9 +73,30 @@ import { heroEmbedUrl, trailerInfo } from './lib/trailer.js';
    - **썸네일이 없는 기사가 있다(루리웹 15건 전부).** 이미지 없는 카드 디자인을 따로 만든다
    - 하단에 "기사 출처는 각 언론사입니다. 제목과 요약만 보여 주며 원문은 해당 사이트에서 확인하세요." 문구
    - 게임 상세 화면에 `api.listNews({ q: game.title, limit: 5 })`로 "관련 뉴스"를 넣는다. 결과가 없으면 영역을 숨긴다
-3. **전체 디자인을 깔끔하게(미니멀).** 요소를 줄이고 여백을 늘린다. 지금의 다크 + 주황 포인트 하나를 유지하고, 카드 테두리, 그림자, 장식 아이콘, 배지를 줄인다. 글자 크기는 3~4단계로 통일한다. 달력 칸은 텍스트 칩 대신 썸네일 위주로 단순하게.
-4. **GTA VI(대작) 표시**는 달력과 목록에서 작은 표시 하나만 (과하지 않게). 메인은 1번에서 처리.
-5. **확인**: `npm run build`, 데스크톱과 모바일 폭, 브라우저 콘솔 에러 0개, 영상이 음소거로 자동 재생되는지, 뉴스 링크가 새 탭으로 열리는지.
+3. **비주얼 디렉션: 깔끔한데 "있어 보이게" (시네마틱 다크).** 팀장 말: UI를 많이 손봐야 하고, 오늘 시연에서 있어 보이기만 하면 된다. 기준은 "게임 스토어 + 영화 개봉 캘린더". 지금 화면은 뼈대는 좋지만 달력 칸이 텍스트 칩 위주라 허전하고 정보가 빽빽하다. 아래를 지킨다.
+   - **레이아웃**: 콘텐츠 최대 폭 1200~1320px, 간격은 8px 단위, 섹션 사이 여백을 크게. 한 화면에 요소 수를 줄인다
+   - **색**: 배경 #0b0d12 계열, 표면은 두 단계, 포인트는 지금의 주황 하나. CSS 변수(디자인 토큰)로 정의해서 흩어진 색을 없앤다. 글자 대비는 읽기 편하게
+   - **타이포**: 제목은 굵고 크게(`clamp()`로 반응형), 본문 15~16px, 숫자는 `tabular-nums`. 글자 크기 단계는 5개 이하
+   - **이미지가 주인공**: 포스터/표지 중심 카드, `aspect-ratio` 고정, 이미지가 뜨기 전에 반짝이는 스켈레톤, 이미지가 없는 게임은 그라데이션 + 제목 이니셜 카드
+   - **달력 칸**: 텍스트 칩 대신 인기작 표지 썸네일 1~3개 + `+N`. 출시가 몰리는 날은 칸 배경에 은은한 글로우. 빈 날은 조용하게
+   - **모션**: 카드 hover 시 살짝 확대와 그림자, 월 전환과 슬라이드 전환은 200~300ms 페이드/슬라이드, 히어로는 크로스페이드. `prefers-reduced-motion`이면 끈다
+   - **내비게이션**: 스크롤하면 블러가 들어가는 상단 고정 바(은은하게), 현재 메뉴 강조
+   - **글래스/블러/그라데이션은 히어로와 내비게이션에만.** 카드마다 쓰면 지저분해진다. 장식 아이콘, 두꺼운 테두리, 배지 남발은 금지
+   - **상세 화면**: 큰 배너(배경 이미지 + 그라데이션), 스크린샷 갤러리(클릭하면 확대되는 라이트박스), 평점 원형 게이지, 메타크리틱 배지, 플랫폼 칩, 가격(4번), 비슷한 게임 가로 슬라이드
+   - **상태 화면 3종도 디자인**: 로딩(스켈레톤), 빈 결과, 서버 꺼짐(`ApiError.status === 0`)
+   - 완성 기준: 스크린샷을 찍었을 때 "있어 보이는가". 데스크톱 1280, 1920, 모바일 390 폭에서 모두 확인
+4. **가격과 바로 가기 링크 (게임 상세 + 카드/목록 + 비교 화면).**
+   ```js
+   import { formatPrice, storeLinks, steamClientLink, newsSearchLink } from './lib/stores.js';
+   ```
+   - **가격**: `formatPrice(game.price)` → `{ kind, text, originalText, discountText }`. kind는 `paid`(정가) | `sale`(현재가 + 취소선 원가 + `-30%` 배지) | `free`(무료) | `unknown`(가격 미정). 카드/목록에는 작게, 상세에는 크게. **`unknown`(가격 미정)을 숨기지 말고 회색으로 보여 준다.** 콘솔 전용이거나 출시 전인 게임이 많다
+   - 가격 아래 작은 글씨로 "Steam 원화 기준 · 변동될 수 있음"과 기준 시각(`game.price.updatedAt`, UTC)
+   - **스토어 버튼**: `storeLinks(game)` → `[{ key, label, url, kind }]`. 전부 새 탭(`target="_blank" rel="noopener noreferrer"`). Steam이 있으면 주 버튼, `kind: 'search'`("Steam에서 검색")는 보조 스타일. PlayStation Store 등 다른 스토어도 같은 줄에
+   - **"Steam 앱으로 열기"**: `steamClientLink(game)`이 null이 아니면 보조 링크로 (`steam://` 주소라 Steam 앱이 설치된 PC에서만 열린다)
+   - **뉴스 바로 가기**: `newsSearchLink(game)`(네이버 뉴스 검색 결과로 이동) 보조 링크. 사이트 안 뉴스는 `api.listNews({ q: game.title, limit: 5 })`
+   - 가격으로 정렬/필터는 아직 API에 없다. 필요하면 "Codex 요청"에 적는다
+5. **GTA VI(대작) 표시**는 달력과 목록에서 작은 표시 하나만 (과하지 않게). 메인은 1번에서 처리. 참고: RAWG가 주는 GTA VI 출시일(11월 19일)이 이미 지났으니 "D-N" 대신 날짜만 쓰거나 "출시일 정보는 변경될 수 있음"을 곁들인다
+6. **확인**: `npm run build`, 데스크톱과 모바일 폭, 브라우저 콘솔 에러 0개, 영상이 음소거로 자동 재생되는지, 뉴스와 스토어 링크가 새 탭으로 열리는지.
 
 ---
 ## [완료] Codex 1차 할 일 (참고용)
@@ -103,6 +125,8 @@ import { trailerInfo } from './lib/trailer.js';
 - `platforms`가 빈 배열인 게임이 약 50개 있다 (플랫폼 미정). 필터에는 안 잡힌다
 - **트레일러(`trailerUrl`)는 메인 대작 6개에만 있다.** RAWG가 영상 데이터를 사실상 주지 않아서(GTA VI도 0개) 팀장 지시로 메이저 게임 6개의 공식 YouTube 트레일러를 직접 골라 지정했다 (`backend/db/featured.json`). 올린 채널을 확인했다: GTA VI(Rockstar Games), Wolverine(PlayStation), Gears of War: E-Day(Gears of War), Forza Horizon 6(Forza)는 제작사/퍼블리셔 공식 채널이고, RE Requiem과 007 First Light는 제작사 채널 영상을 못 찾아서 IGN이 올린 공식 트레일러다. Crimson Desert는 쓸 만한 영상이 없어 뺐다. 지정할 때 YouTube oEmbed로 퍼가기가 되는지 확인했다 (`backend/db/featured.json`, `npm run db:featured`). 나머지 게임은 `trailerUrl`이 null이고, API가 `trailerSearchUrl`(YouTube 검색 링크)을 대신 계산해 주며 `trailerInfo()`가 그걸 `kind: 'search'`로 돌려준다. 영상 플레이어 대신 "트레일러 검색" 버튼으로 표시한다
 - 메인 대작 목록은 `GET /api/featured`로 받는다 (지금 6개, 순서: GTA VI, Wolverine, RE Requiem, Gears of War: E-Day, Forza Horizon 6, 007 First Light)
+- **스토어 링크와 가격**: 스토어 링크는 340개 게임에 있다 (Steam 225개, 그 외 PlayStation Store, Epic 등). 가격은 Steam 원화 기준 **216개**: 정가 또는 할인 212개(할인 중 25개 포함), 무료 4개. 나머지는 `price: null`("가격 미정")이다. 이유는 콘솔 전용(GTA VI, Wolverine, Forza Horizon 6), 출시 전이라 가격 미공개, Steam 미등록(Path of Exile 2)이다. 가격은 2026-11-20 오전(UTC 04:06) 기준이고 계속 바뀐다. **시연 직전에 `cd backend; npm run prices:refresh`**(약 30초)를 한 번 돌린다. 새 게임을 가져왔다면 `npm run enrich`(스토어 링크 + 가격). 스토어 링크는 RAWG, 가격은 Steam의 공개 조회를 쓰며, 공식 문서가 있는 API가 아니라서 응답이 바뀌면 가격이 비어 보일 수 있다
+- 게임마다 계산해서 주는 바로 가기 링크: `steamStoreUrl`(Steam 상품 페이지), `steamClientUrl`(Steam 앱으로 열기), `steamSearchUrl`(Steam 검색), `newsSearchUrl`(네이버 뉴스 검색), `trailerSearchUrl`(YouTube 검색)
 
 ## 데이터 규칙
 - 데이터 출처는 RAWG(rawg.io). **화면에 "Data from RAWG" 같은 출처 표시와 링크(게임의 sourceUrl)를 넣어야 한다** (RAWG 이용 조건)
@@ -112,13 +136,14 @@ import { trailerInfo } from './lib/trailer.js';
 - RAWG API 키는 backend/.env의 RAWG_API_KEY에만 둔다. 채팅, 문서, 코드, 커밋에 적지 않는다
 
 ## 현재 상태
-- 백엔드 완성 (Claude): games RESTful CRUD, 확장 필드, 페이지네이션(X-Total-Count), 기간/ids/minRating 필터, 달력 요약, 비슷한 게임, .ics, 장르/플랫폼 목록, trailerSearchUrl. 자동 테스트 104개 통과 (`cd backend; npm test`)
-- 팀장 요청 5가지 중 백엔드 몫 완료 (Claude): 성인 게임 필터와 삭제, 대작 고정 API(`/api/featured`)와 GTA VI 트레일러, 뉴스 수집과 API(`/api/news`, `/api/news/sources`), 재가져오기 때 직접 넣은 값이 지워지던 문제 수정. 남은 건 Codex의 화면 작업(위 "Codex 할 일 2차")
+- 백엔드 완성 (Claude): games RESTful CRUD, 확장 필드, 페이지네이션(X-Total-Count), 기간/ids/minRating 필터, 달력 요약, 비슷한 게임, .ics, 장르/플랫폼 목록, trailerSearchUrl. 자동 테스트 128개 통과 (`cd backend; npm test`)
+- 팀장 요청 5가지 중 백엔드 몫 완료 (Claude): 성인 게임 필터와 삭제, 대작 고정 API(`/api/featured`)와 GTA VI 트레일러, 뉴스 수집과 API(`/api/news`, `/api/news/sources`), 재가져오기 때 직접 넣은 값이 지워지던 문제 수정
 - RAWG 가져오기 실제 실행 완료. 첫 실행에서 응답 매핑이 맞는 것을 확인했다 (평점, 개발사, 스크린샷, 장르, 플랫폼 정상). 키는 backend/.env에 있다
-- 프론트 비화면 모듈 완성 (Claude): api 클라이언트(featured, listNews 추가), 날짜 계산, 저장소, 트레일러 판별(heroEmbedUrl 추가). 테스트 30개 통과 (`cd frontend; npm test`)
+- 프론트 비화면 모듈 완성 (Claude): api 클라이언트(featured, listNews 추가), 날짜 계산, 저장소, 트레일러 판별(heroEmbedUrl 추가). 테스트 40개 통과 (`cd frontend; npm test`)
 - 프론트 화면 완성 (Codex): 실제 RAWG 데이터로 월간·주간 출시 달력, 날짜별 목록, 게임 탐색·검색, 플랫폼·장르 필터, 상세·트레일러 검색·비슷한 게임, 관심 게임·임박 표시, 두 게임 비교, .ics 파일을 제공한다
+- 프론트 2차 화면 완성 (Codex): GTA VI가 먼저 나오는 공식 트레일러 6개 캐러셀, 뉴스 목록·필터·더 보기·게임 상세 관련 뉴스, 미니멀 테마와 썸네일 달력
 - 게임 포럼: 글과 댓글은 브라우저 localStorage에 저장한다. 여러 기기나 사용자의 게시물을 공유하려면 별도 API가 필요하다
-- 프론트 검증: npm run build 및 npm test 26개 통과. 2026년 11월 API 일정 67건, 주요 UI 동작과 모바일 화면을 브라우저에서 확인했다
+- 프론트 검증: npm run build 및 npm test 40개 통과. 데스크톱에서 공식 YouTube 영상 6개 재생, iframe 1개 유지, 새 탭 원문 열기와 브라우저 앱 콘솔 오류 0개를 확인했다. 모바일에서 스와이프·정지 모드·화면 폭을 확인했다
 - 실행 스크립트 완성 (Claude): `start.bat`으로 처음부터 6초 만에 3개가 모두 켜지는 것을 확인했고, 재실행(이미 켜진 상태)과 `stop.bat`, DB를 껐다 켜도 데이터(492개)가 보존되는 것도 확인했다
 - index.html(루트)은 미커밋 임시 확인용 파일 (정리 대기)
 
@@ -129,10 +154,12 @@ import { trailerInfo } from './lib/trailer.js';
 | 2026-11-20 | Codex | React 화면을 실제 RAWG 데이터에 연결하고 출시 달력, 탐색, 게임 상세, 비교와 로컬 포럼 구현. 빌드·테스트 및 데스크톱/모바일 브라우저 확인 |
 | 2026-11-20 | Claude Code | 성인 게임 12개 삭제와 가져올 때 필터, `/api/featured`와 GTA VI 공식 트레일러 지정, 뉴스 수집/API(RSS 6곳, 169건), heroEmbedUrl, 테스트 101개/29개 |
 | 2026-11-20 | Claude Code | 메인 캐러셀용 메이저 게임 5개 트레일러 추가(총 6개, 채널 확인 후 등록, 잘못된 영상 방지 검사), heroEmbedUrl 캐러셀 옵션, 테스트 104개/30개 |
+| 2026-11-20 | Claude Code | 스토어 링크(340개)와 Steam 원화 가격(216개, 무료 4개 구분) 수집, Steam/뉴스 검색 바로 가기 링크, `price`/`stores` 필드, lib/stores.js, 테스트 128개/40개 |
+| 2026-11-20 | Codex | 대작 트레일러 캐러셀, 뉴스 페이지·관련 뉴스, 미니멀 테마와 달력 썸네일. 데스크톱·모바일 확인 |
 
 ## 다음 할 일
 - [x] (Codex) 출시 달력과 게임 탐색·상세·비교, 포럼 UI를 로컬에서 빌드하고 확인
-- [ ] (Codex) "Codex 할 일 (2차)" 1~5번: 히어로 자동 재생, 뉴스 페이지, 미니멀 디자인
+- [x] (Codex) 2차 화면: 트레일러 캐러셀, 뉴스 페이지, 미니멀 디자인과 GTA VI 표시, 브라우저 확인
 - [ ] (Claude) Codex 요청이 올라오면 백엔드 수정
 - [ ] (팀장) 시연 전에 `start.bat`으로 서비스를 켜고 http://127.0.0.1:5173 에서 확인한 뒤, 필요할 때 직접 push
 - [ ] 임시 index.html 정리 (삭제 여부 팀장 확인)

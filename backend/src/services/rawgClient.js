@@ -49,5 +49,6 @@ export function createRawgClient({ key, fetchImpl = fetch, delayMs = 150, sleep 
       get('/games', { dates: `${from},${to}`, ordering: '-added', page, page_size: pageSize }),
     getGame: (id) => get(`/games/${id}`),
     getMovies: (id) => get(`/games/${id}/movies`),
+    getStores: (id) => get(`/games/${id}/stores`), // [{ store_id, url }]
   };
 }

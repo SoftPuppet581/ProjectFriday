@@ -13,6 +13,9 @@
     "db:featured": "node scripts/applyFeatured.js",
     "import": "node scripts/importRawg.js",
     "news:refresh": "node scripts/refreshNews.js",
+    "stores:enrich": "node scripts/enrichStores.js",
+    "prices:refresh": "node scripts/refreshPrices.js",
+    "enrich": "node scripts/enrichStores.js && node scripts/refreshPrices.js",
     "test": "node --test --test-concurrency=1 test/"
   },
   "dependencies": {
