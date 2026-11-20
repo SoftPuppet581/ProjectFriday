@@ -1,15 +1,11 @@
 import { loadToken } from '../lib/auth.js';
+import { ApiError } from './errors.js';
+import { createStaticApi } from './staticApi.js';
 
 // 백엔드 API 호출 모듈 (화면 코드 없음). docs/API.md 참고.
 // 사용 예: import { api } from './api/client.js';  const { items, total } = await api.listGames({ month: '2026-12' });
 
-export class ApiError extends Error {
-  constructor(status, message, errors = []) {
-    super(message);
-    this.status = status;
-    this.errors = errors; // [{ field, message }]
-  }
-}
+export { ApiError };
 
 function buildQuery(params = {}) {
   const search = new URLSearchParams();
@@ -118,4 +114,9 @@ export function createApi({ baseUrl = 'http://localhost:3000', fetchImpl = (...a
 }
 
 // 기본 인스턴스. 주소를 바꾸려면 frontend/.env 에 VITE_API_BASE=... 를 넣는다
-export const api = createApi({ baseUrl: import.meta.env?.VITE_API_BASE ?? 'http://localhost:3000', getToken: loadToken });
+// 정적 데모 모드(Vercel 배포): 서버 없이 public/data/*.json 으로 읽기 전용 동작한다. (npm run build:static 이 VITE_STATIC_DATA=1 을 켠다)
+export const isStaticDemo = import.meta.env?.VITE_STATIC_DATA === '1';
+
+export const api = isStaticDemo
+  ? createStaticApi({ baseUrl: `${import.meta.env?.BASE_URL ?? '/'}data/` })
+  : createApi({ baseUrl: import.meta.env?.VITE_API_BASE ?? 'http://localhost:3000', getToken: loadToken });

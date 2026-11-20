@@ -193,6 +193,11 @@ select:hover { border-color: var(--line-strong); }
 .link-button:hover { color: var(--accent-hover); }
 .login-note { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-3) var(--s-4); margin: 0 0 var(--s-5); padding: var(--s-4) var(--s-5); border-radius: var(--r-md); background: var(--bg-1); border: 1px solid var(--line); color: var(--text-2); font-size: .9375rem; }
 
+/* ── 정적 데모 버전 표시 ── */
+.demo-badge { flex: 0 0 auto; padding: 4px 12px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); color: var(--text-2); font-size: .8125rem; font-weight: 600; cursor: help; }
+.demo-note { color: var(--text-3); }
+.footer-inner { flex-wrap: wrap; row-gap: var(--s-2); }
+
 /* ── 프로필 사진, 프로필 창 ── */
 .avatar { display: block; flex: 0 0 auto; border-radius: 50%; object-fit: cover; background: var(--bg-2); box-shadow: 0 0 0 1px var(--line); }
 .account-profile { display: flex; align-items: center; gap: var(--s-2); padding: 3px 12px 3px 3px; border: 1px solid transparent; border-radius: var(--r-pill); background: none; color: var(--text-1); transition: background var(--t-fast), border-color var(--t-fast); }

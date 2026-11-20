@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bookmark, Columns2, Gamepad2, Search } from 'lucide-react';
-import { api } from './api/client.js';
+import { api, isStaticDemo } from './api/client.js';
 import CalendarView, { CalendarControls, FilterSelect } from './CalendarView.jsx';
 import { monthLabel } from './calendar.js';
 import Forum from './Forum.jsx';
@@ -59,11 +59,30 @@ function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLog
             </button>
             <button type="button" className="button button-small" onClick={onLogout}>로그아웃</button>
           </div>
+        ) : isStaticDemo ? (
+          <span className="demo-badge" title="서버 없이 저장된 데이터로 보여 주는 데모 버전이에요">데모</span>
         ) : (
           <button type="button" className="button button-small button-accent" onClick={onLogin}>로그인</button>
         )}
       </div>
     </header>
+  );
+}
+
+// 정적 데모 버전에서만 푸터에 표시: 저장본이 언제 기준인지와 쓸 수 없는 기능을 알려 준다
+async function loadSnapshotMeta() {
+  const response = await fetch(`${import.meta.env.BASE_URL}data/meta.json`);
+  if (!response.ok) throw new Error('meta');
+  return response.json();
+}
+
+function DemoNotice() {
+  const { data } = useRequest(loadSnapshotMeta);
+  const date = data?.exportedAt ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'long' }).format(new Date(data.exportedAt)) : null;
+  return (
+    <span className="demo-note">
+      {' · '}데모 버전{date && ` (${date} 기준 저장본)`}. 가격과 뉴스는 이후 바뀌었을 수 있고, 로그인과 글쓰기는 로컬 서버에서만 쓸 수 있어요.
+    </span>
   );
 }
 
@@ -123,7 +142,7 @@ function Favorites({ ids, onGame, user, onLogin }) {
   return (
     <section aria-labelledby="favorites-heading">
       <div className="section-heading"><div><h2 id="favorites-heading">관심 게임</h2><p>{ids.length}개 게임</p></div></div>
-      {!user && (
+      {!user && !isStaticDemo && (
         <p className="login-note">
           지금은 이 브라우저에만 저장돼요. 로그인하면 계정에 저장되어 다른 기기에서도 볼 수 있어요.
           <button type="button" className="button button-small" onClick={onLogin}>로그인 / 회원가입</button>
@@ -336,7 +355,7 @@ export default function App() {
       </main>
       <footer className="site-footer">
         <div className="shell footer-inner">
-          <span>ProjectFriday</span>
+          <span>ProjectFriday{isStaticDemo && <DemoNotice />}</span>
           <a href="https://rawg.io/" target="_blank" rel="noreferrer">Data from RAWG</a>
         </div>
       </footer>

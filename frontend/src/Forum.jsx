@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ArrowLeft, Heart, MessageCircle, PenLine, Plus, Trash2 } from 'lucide-react';
-import { api } from './api/client.js';
+import { api, isStaticDemo } from './api/client.js';
 import { Avatar } from './Avatar.jsx';
 import { PublishedTime } from './NewsCards.jsx';
 import { Dialog, WaitState } from './ReleaseViews.jsx';
@@ -76,7 +76,7 @@ function Thread({ id, user, onBack, onLogin, onGame, onChanged }) {
       </div>
       <p className="thread-body">{post.body}</p>
       <div className="thread-actions">
-        <button type="button" className="like-button" aria-pressed={post.liked} onClick={toggleLike} disabled={busy}>
+        <button type="button" className="like-button" aria-pressed={post.liked} onClick={toggleLike} disabled={busy || isStaticDemo} title={isStaticDemo ? '데모 버전에서는 좋아요를 누를 수 없어요' : undefined}>
           <Heart size={17} fill={post.liked ? 'currentColor' : 'none'} /> 좋아요 {post.likeCount}
         </button>
       </div>
@@ -106,6 +106,8 @@ function Thread({ id, user, onBack, onLogin, onGame, onChanged }) {
           <textarea id="reply-body" required maxLength={1000} value={comment} onChange={(event) => setComment(event.target.value)} />
           <button type="submit" className="button button-accent" disabled={!comment.trim() || busy}>댓글 남기기</button>
         </form>
+      ) : isStaticDemo ? (
+        <p className="login-note">데모 버전에서는 글을 읽을 수만 있어요. 댓글과 글쓰기는 로컬 서버에서 쓸 수 있어요.</p>
       ) : (
         <LoginPrompt onLogin={onLogin}>댓글을 쓰려면 로그인해 주세요.</LoginPrompt>
       )}
@@ -151,8 +153,8 @@ export default function Forum({ draftGame, onClearDraft, user, onLogin, onGame }
   return (
     <section aria-labelledby="forum-heading" className="forum">
       <div className="section-heading">
-        <div><h2 id="forum-heading">게임 포럼</h2><p>게임 이야기를 나누는 곳이에요. 읽기는 누구나, 글쓰기는 로그인이 필요해요.</p></div>
-        <button className="button button-accent" type="button" onClick={() => (user ? setWriting(true) : onLogin())}><Plus size={18} /> 새 글</button>
+        <div><h2 id="forum-heading">게임 포럼</h2><p>{isStaticDemo ? '게임 이야기를 나누는 곳이에요.' : '게임 이야기를 나누는 곳이에요. 읽기는 누구나, 글쓰기는 로그인이 필요해요.'}</p></div>
+        {!isStaticDemo && <button className="button button-accent" type="button" onClick={() => (user ? setWriting(true) : onLogin())}><Plus size={18} /> 새 글</button>}
       </div>
 
       {activeId ? (

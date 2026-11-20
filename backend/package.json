@@ -13,6 +13,7 @@
     "db:featured": "node scripts/applyFeatured.js",
     "import": "node scripts/importRawg.js",
     "news:refresh": "node scripts/refreshNews.js",
+    "export:static": "node scripts/exportStatic.js",
     "seed:demo": "node scripts/seedDemo.js",
     "seed:demo:remove": "node scripts/seedDemo.js --remove",
     "stores:enrich": "node scripts/enrichStores.js",

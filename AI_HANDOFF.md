@@ -19,6 +19,7 @@
 - 게임 뉴스 페이지가 있다 (RSS 6곳에서 가져온 기사 제목, 요약, 썸네일, 원문 링크)
 - **회원가입/로그인과 개인 기능이 있다** (팀장 요청). 이메일+비밀번호, 로그인하면 토큰(Bearer, 14일). 관심 게임과 선호 플랫폼이 계정에 저장된다. 로그인 전에 담은 관심 게임은 로그인 때 계정에 합친다. 이메일 인증/비밀번호 재설정은 없다. 자세한 내용은 docs/API.md "회원, 로그인, 개인 기능"
   - 백엔드: `routes/users.js`, `controllers/authController.js`, `models/User.js`, `middleware/{auth,validateAuth,rateLimit}.js`, `services/passwords.js` (테이블 users, sessions, user_favorites)
+- **Vercel 정적 데모 배포 (팀장 요청, 2026-11-20)**: Vercel에는 Express/MariaDB를 올릴 수 없어서, `npm run export:static`(backend)이 DB를 `frontend/public/data/*.json`으로 내보내고 `npm run build:static`(frontend)이 서버 없이 읽기 전용으로 동작하는 빌드를 만든다 (`api/staticApi.js`가 같은 규칙으로 응답하며 라이브 서버 응답과 61건 비교해 일치 확인). 포럼은 샘플 계정의 글만 내보내고 사용자 정보는 어디에도 없다. 설정은 루트 `vercel.json`과 `frontend/vercel.json`. 방법과 주의점은 **docs/DEPLOY.md**. push는 팀장이 직접 한다 (push하면 Vercel이 자동 배포)
 - **프로필 사진과 서버 포럼 (팀장 요청)**: 기본 사진 + 선택용 20개(`frontend/public/avatars/`), 프로필 창(`ProfileDialog.jsx`)에서 고른다. 포럼은 브라우저 저장에서 **서버 저장**으로 바뀌어 글, 댓글, 좋아요가 계정에 연결된다 (`Forum.jsx`, `routes/forum.js`). **시연용 샘플 계정 20개**와 글 18개, 댓글 43개가 들어 있다 (`npm run seed:demo`, 지우기는 `npm run seed:demo:remove`). 샘플은 DB에 is_demo 표시가 있고 로그인할 수 없으며, 포럼 아래에 "일부 계정과 글은 시연용 샘플입니다" 안내가 있다. 자세한 내용은 docs/API.md "프로필 사진"과 "포럼"
   - 프론트: `AuthDialog.jsx`(로그인/회원가입 창), `lib/auth.js`(토큰 저장), `App.jsx`의 handleAuth/handleLogout/onFavorite, 헤더의 로그인 버튼과 닉네임, 관심 게임 화면의 로그인 안내
 
