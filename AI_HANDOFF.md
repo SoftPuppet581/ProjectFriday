@@ -219,3 +219,21 @@ import { trailerInfo } from './lib/trailer.js';
 - `client.js`, App, Forum 연결(Supabase 모드 선택, 읽기 전용 표시 해제 등)은 Claude가 이 변경 안에서 함께 처리한다
 - 문서: `docs/SUPABASE.md` 신규, `docs/DEPLOY.md` 갱신, `.gitignore`에 `*.local` 추가(`frontend/.env.static.local`용)
 - 주의: anon key만 쓴다(공개 가능). service_role 키는 절대 쓰지 않는다. 시연 후 Supabase 프로젝트 삭제
+
+## Codex 할 일 (3차: 피드백, 팀장 요청. Codex가 구현한다)
+팀장 요청 원문 요약: "로그인한 사람만 피드백을 남기게. Supabase Auth 이메일+비밀번호, 가입 때 별명. feedback 표(별점 1~5, 한마디 200자 이하, 쓴 사람, 별명, 시각) SQL을 먼저 보여 주기(팀장이 SQL Editor에서 직접 실행). RLS: 읽기 누구나, 쓰기는 로그인한 본인 이름으로만, 수정/삭제는 본인 글만. 화면에는 이메일 대신 별명만. 이메일과 별명 외 개인정보는 받지 않는다. secret/service_role 키는 쓰지 않는다. 다 되면 GitHub에."
+
+이미 되어 있는 것 (다시 만들지 말고 재사용): 회원가입(이메일, 비밀번호, 별명), 로그인, 로그아웃, 프로필 사진/관심 게임/포럼, RLS 패턴 -> `supabase/schema.sql`, `frontend/src/api/supabaseApi.js`(PostgREST/GoTrue를 fetch로 직접 호출, `createSupabaseApi`), `frontend/src/api/client.js`(hasSupabase), `frontend/src/AuthDialog.jsx`, `frontend/src/App.jsx`(user 상태), `docs/SUPABASE.md`. 프로젝트 주소와 publishable key는 이미 `frontend/.env.static`에 들어 있다(공개 값). 새로 키를 요구하거나 쓰지 말 것.
+
+해야 할 것 (이 순서):
+1. **`supabase/feedback.sql` 작성** (여러 번 실행해도 안전하게, schema.sql 스타일). 먼저 이 파일 내용을 팀장에게 보여 주고 실행을 기다린다 (Codex는 DB에 직접 실행하지 못한다).
+   - `public.feedback`: id bigint identity PK, user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade, nickname text not null (1~40자), rating smallint not null check 1~5, comment text not null check 1~200자(btrim 후), created_at timestamptz default now(). 인덱스: created_at desc, user_id.
+   - 별명(nickname)은 클라이언트가 보내는 값을 믿지 않는다: BEFORE INSERT 트리거로 profiles.display_name을 복사해 넣는다 (위조 방지). 닉네임을 바꾸면 기존 글에도 반영하려면 profiles 변경 트리거를 추가하거나, 조회 때 profiles를 조인하는 방식 중 하나를 골라 이유를 주석으로 적는다.
+   - RLS enable. 정책: select 누구나(using true), insert는 with check (auth.uid() = user_id), update/delete는 using/with check (auth.uid() = user_id). anon/authenticated 권한은 schema.sql처럼 revoke all 후 필요한 것만 grant (update는 rating, comment 열만). email 같은 개인정보 컬럼은 만들지 않는다.
+2. **API**: `supabaseApi.js`에 `listFeedback({ limit, page })` (최신순, { items, total, average }), `createFeedback({ rating, comment })`, `updateFeedback(id, { rating?, comment? })`, `deleteFeedback(id)` 추가. 입력 검증(별점 정수 1~5, 한마디 1~200자 글자 수는 [...text].length)을 ApiError(400, errors:[{field,message}])로. 응답은 `{ id, rating, comment, author: { id, displayName, avatar }, createdAt, mine }` (이메일은 절대 포함하지 않는다). 1인 1개로 제한할지는 정하지 말고(여러 개 허용) 그대로 둔다.
+3. **화면**: 새 `frontend/src/Feedback.jsx` + 메뉴(App.jsx의 navigation)에 "피드백" 추가. 목록(별명, 프로필 사진, 별점, 한마디, 시각, 평균 별점), 로그인한 사람만 작성 폼(별점 1~5 선택, 한마디 200자 카운터), 내 글에만 수정/삭제 버튼, 비로그인은 "로그인해야 남길 수 있어요" + 로그인 버튼(onLogin). `hasSupabase`가 아니면(읽기 전용 데모/로컬 Express) 이 메뉴를 숨기거나 안내만 보여 준다. 기존 포럼 화면의 스타일 클래스를 최대한 재사용하고 모바일(375px)에서 가로 스크롤이 생기지 않게 한다.
+4. **테스트**: `frontend/test/supabaseApi.test.js` 스타일로 피드백 API 테스트 추가(가짜 fetch). `cd frontend && npm test` 전부 통과, `npm run build:static` 성공.
+5. **문서**: `docs/SUPABASE.md`에 feedback.sql 실행 단계 추가, 이 파일 맨 끝 "마지막으로 한 일"에 기록.
+6. **commit까지만** (CLAUDE.md 규칙: push는 하지 않는다. 팀장이 요청하면 Claude가 push한다). 비밀번호/토큰/개인정보를 파일이나 로그에 적지 않는다. root의 index.html은 건드리지 않는다.
+
+SQL 실행 후 실서버 검증 (팀장이 feedback.sql을 실행했다고 알려 주면): 가짜 계정으로 가입 -> 피드백 작성/수정/삭제, 남의 글 수정/삭제가 막히는지, 비로그인 작성이 막히는지 확인하는 스크립트를 임시 폴더에서 돌린다 (테스트 계정 이메일은 @example.com, 비밀번호는 무작위로 만들어 출력하지 않는다).
