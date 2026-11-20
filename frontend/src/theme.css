@@ -267,6 +267,33 @@ button.forum-game-link:hover { border-color: var(--accent); color: var(--text-1)
 .reply-form textarea, .forum-form :is(input, textarea) { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--text-1); padding: var(--s-3) var(--s-4); outline: none; transition: border-color var(--t-fast), box-shadow var(--t-fast); }
 .reply-form textarea:focus, .forum-form :is(input, textarea):focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .forum-sample-note { margin-top: var(--s-4); color: var(--text-3); font-size: .8125rem; text-align: center; }
+
+/* ── 피드백 ── */
+.feedback { display: grid; gap: var(--s-4); }
+.feedback-summary { display: flex; align-items: center; gap: var(--s-3); flex: 0 0 auto; }
+.feedback-summary strong { font-size: 1.75rem; line-height: 1; }
+.feedback-summary small { color: var(--text-3); }
+.stars { display: inline-flex; gap: 2px; color: var(--accent); vertical-align: middle; }
+.star-picker { display: flex; gap: var(--s-1); }
+.star-picker button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; border: 0; border-radius: var(--r-pill); color: var(--text-3); }
+.star-picker button[data-on=true] { color: var(--accent); }
+.star-picker button:hover:not(:disabled) { color: var(--accent); }
+.feedback-compose { padding: var(--s-5); }
+.feedback-form { display: grid; gap: var(--s-3); }
+.feedback-field textarea, .feedback-form textarea { width: 100%; resize: vertical; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--text-1); padding: var(--s-3) var(--s-4); outline: none; transition: border-color var(--t-fast), box-shadow var(--t-fast); }
+.feedback-form textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.feedback-form-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.feedback-count { color: var(--text-3); }
+.feedback-count.is-full { color: var(--accent); }
+.feedback-actions { display: flex; gap: var(--s-2); }
+.feedback-list { display: grid; gap: var(--s-3); list-style: none; margin: 0; padding: 0; }
+.feedback-item { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-4); background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); }
+.feedback-copy { flex: 1; min-width: 0; }
+.feedback-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-bottom: 2px; }
+.feedback-head strong { font-size: .9375rem; }
+.feedback-copy p { margin: 0; color: var(--text-1); line-height: 1.6; overflow-wrap: anywhere; }
+.feedback-owner { display: flex; gap: var(--s-1); flex: 0 0 auto; }
+.feedback-owner .icon-button { width: 36px; min-height: 36px; }
 @media (max-width: 800px) { .thread-row { padding: var(--s-4); } .thread-stats { display: none; } .avatar-grid { grid-template-columns: repeat(5, 1fr); } }
 
 /* ── 홈 레일(가로 스크롤)과 뉴스 줄 ── */

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bookmark, Columns2, Gamepad2, Search } from 'lucide-react';
-import { api, isSnapshot, isStaticDemo } from './api/client.js';
+import { api, hasSupabase, isSnapshot, isStaticDemo } from './api/client.js';
+import Feedback from './Feedback.jsx';
 import CalendarView, { CalendarControls, FilterSelect } from './CalendarView.jsx';
 import { monthLabel } from './calendar.js';
 import Forum from './Forum.jsx';
@@ -23,6 +24,7 @@ const navigation = [
   ['news', '뉴스'],
   ['favorites', '관심 게임'],
   ['forum', '포럼'],
+  ...(hasSupabase ? [['feedback', '피드백']] : []), // 피드백은 Supabase(로그인)가 연결됐을 때만
 ];
 
 function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLogout, onProfile }) {
@@ -351,6 +353,7 @@ export default function App() {
         {view === 'catalog' && <Catalog key={JSON.stringify([query, catalogPeriod, platform, genre])} query={query} period={catalogPeriod} platform={platform} genre={genre} filters={filters} favorites={favorites} onFavorite={onFavorite} onGame={setGameId} onClear={() => { setSearch(''); setPlatform(''); setGenre(''); openCatalog(''); }} />}
         {view === 'news' && <News />}
         {view === 'favorites' && <Favorites ids={favorites} onGame={setGameId} user={user} onLogin={() => setAuthOpen(true)} />}
+        {view === 'feedback' && hasSupabase && <Feedback user={user} onLogin={() => setAuthOpen(true)} />}
         {view === 'forum' && <Forum draftGame={draftGame} onClearDraft={() => setDraftGame(null)} user={user} onLogin={() => setAuthOpen(true)} onGame={setGameId} />}
       </main>
       <footer className="site-footer">

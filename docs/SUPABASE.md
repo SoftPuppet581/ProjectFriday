@@ -15,6 +15,7 @@ Vercel 데모는 기본적으로 읽기 전용입니다. Supabase를 연결하�
    npm run export:supabase-seed    # supabase/seed_demo.sql 이 만들어진다
    ```
    `supabase/seed_demo.sql` 내용을 SQL Editor에 붙여 넣고 Run합니다. (다시 실행하면 샘플만 지우고 다시 넣습니다. 실제 방문자의 글은 그대로입니다)
+   피드백 기능을 쓰려면 `supabase/feedback.sql`도 같은 방식으로 실행합니다. (별점 1~5, 한마디 200자 이하. 읽기는 누구나, 쓰기는 로그인한 본인 이름으로만, 수정과 삭제는 본인 글만 됩니다. 별명은 서버가 프로필에서 복사하므로 위조할 수 없고, 이메일은 저장하지도 보여 주지도 않습니다)
 5. **Project Settings → API**에서 두 값을 복사합니다.
    - Project URL (`https://xxxx.supabase.co`)
    - anon public key

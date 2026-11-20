@@ -237,3 +237,8 @@ import { trailerInfo } from './lib/trailer.js';
 6. **commit까지만** (CLAUDE.md 규칙: push는 하지 않는다. 팀장이 요청하면 Claude가 push한다). 비밀번호/토큰/개인정보를 파일이나 로그에 적지 않는다. root의 index.html은 건드리지 않는다.
 
 SQL 실행 후 실서버 검증 (팀장이 feedback.sql을 실행했다고 알려 주면): 가짜 계정으로 가입 -> 피드백 작성/수정/삭제, 남의 글 수정/삭제가 막히는지, 비로그인 작성이 막히는지 확인하는 스크립트를 임시 폴더에서 돌린다 (테스트 계정 이메일은 @example.com, 비밀번호는 무작위로 만들어 출력하지 않는다).
+
+### 2026-11-20 피드백 기능 완료 (Claude가 마무리. Codex는 한도 문제로 SQL까지만 작성)
+- supabase/feedback.sql(Codex 작성, 실서버 적용됨), frontend/src/Feedback.jsx, supabaseApi.js의 listFeedback/createFeedback/updateFeedback/deleteFeedback, 메뉴 '피드백'(Supabase 연결 시에만 표시).
+- 실서버 검증: 비로그인 작성 차단, 남의 글 수정/삭제 차단(404), 별명/user_id 위조 차단(403), 별점 6과 201자 거절, 응답에 이메일 없음.
+

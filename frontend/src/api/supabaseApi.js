@@ -105,7 +105,7 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
   }
 
   // 읽기: 로그인 안 했어도 anon 키로 된다. 로그인했으면 내 "좋아요 여부"를 알 수 있게 토큰을 쓴다
-  async function readRest(path) {
+  async function readRest(path, options = {}) {
     let token = anonKey;
     if (readSession()) {
       try {
@@ -114,7 +114,33 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
         token = anonKey;
       }
     }
-    return send(`/rest/v1/${path}`, { token });
+    return send(`/rest/v1/${path}`, { ...options, token });
+  }
+
+  // 피드백: 별명은 현재 프로필(바뀌면 따라간다)을, 프로필이 없으면 저장된 별명을 보여 준다. 이메일은 어디에도 없다
+  const FEEDBACK_SELECT = 'id,rating,comment,created_at,user_id,nickname,profiles!user_id(id,display_name,avatar)';
+
+  function mapFeedback(row) {
+    const viewer = myId();
+    return {
+      id: row.id,
+      rating: row.rating,
+      comment: row.comment,
+      author: author(row.profiles ?? { id: row.user_id, display_name: row.nickname, avatar: null }, row.user_id),
+      createdAt: row.created_at,
+      mine: viewer !== null && row.user_id === viewer,
+    };
+  }
+
+  function checkRating(value) {
+    if (!Number.isInteger(value) || value < 1 || value > 5) throw fieldError('rating', '별점은 1~5점으로 골라 주세요.');
+    return value;
+  }
+
+  function checkComment(value) {
+    const text = String(value ?? '').trim();
+    if (!text || [...text].length > 200) throw fieldError('comment', '한마디는 1~200자로 입력해 주세요.');
+    return text;
   }
 
   const myId = () => readSession()?.user.id ?? null;
@@ -325,6 +351,37 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
     },
     async unlikeForumPost(id) {
       await rest(`forum_likes?post_id=eq.${Number(id)}`, { method: 'DELETE' }).catch(reject);
+      return null;
+    },
+
+    // ---- 피드백 (읽기는 누구나, 쓰기/수정/삭제는 로그인한 본인 글만. supabase/feedback.sql) ----
+    // 반환: { items, total, average } (total과 average는 전체 기준, 글이 없으면 average는 null)
+    async listFeedback({ limit = 20, page = 1 } = {}) {
+      const offset = (page - 1) * limit;
+      const [list, summary] = await Promise.all([
+        readRest(`feedback?select=${FEEDBACK_SELECT}&order=created_at.desc,id.desc&limit=${limit}&offset=${offset}`),
+        readRest('rpc/feedback_summary', { method: 'POST', body: {} }),
+      ]);
+      const stats = summary.data?.[0] ?? {};
+      return { items: list.data.map(mapFeedback), total: Number(stats.total ?? list.data.length), average: stats.average == null ? null : Number(stats.average) };
+    },
+    async createFeedback({ rating, comment }) {
+      const row = { rating: checkRating(rating), comment: checkComment(comment) };
+      const { data } = await rest(`feedback?select=${FEEDBACK_SELECT}`, { method: 'POST', body: row, headers: { Prefer: 'return=representation' } }).catch(reject);
+      return mapFeedback(data[0]);
+    },
+    async updateFeedback(id, changes) {
+      const patch = {};
+      if (changes.rating !== undefined) patch.rating = checkRating(changes.rating);
+      if (changes.comment !== undefined) patch.comment = checkComment(changes.comment);
+      if (!Object.keys(patch).length) throw fieldError('rating', '바꿀 내용이 없습니다.');
+      const { data } = await rest(`feedback?id=eq.${Number(id)}&select=${FEEDBACK_SELECT}`, { method: 'PATCH', body: patch, headers: { Prefer: 'return=representation' } }).catch(reject);
+      if (!data?.length) throw notFound('피드백', id); // 없거나 내 글이 아니면(RLS) 아무 행도 바뀌지 않는다
+      return mapFeedback(data[0]);
+    },
+    async deleteFeedback(id) {
+      const { data } = await rest(`feedback?id=eq.${Number(id)}&select=id`, { method: 'DELETE', headers: { Prefer: 'return=representation' } }).catch(reject);
+      if (!data?.length) throw notFound('피드백', id);
       return null;
     },
   };
