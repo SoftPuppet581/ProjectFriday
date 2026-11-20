@@ -304,6 +304,20 @@ button.forum-game-link:hover { border-color: var(--accent); color: var(--text-1)
   .hero-dots button { min-width: 28px; }
   .global-search { min-height: 44px; }
   .global-search button { padding: 12px 14px; }
+  /* 상단 바: 로고 | 검색 | 로그인(또는 내 계정)을 한 줄에, 메뉴는 아래 줄에 */
+  .header-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 120px) auto; align-items: center; }
+  .brand { min-width: 0; }
+  .global-search { width: 100%; min-width: 0; }
+  .global-search input { min-width: 0; padding-left: 12px; }
+  .global-search button { padding-inline: 10px; }
+  .header-inner > .button, .header-inner > .demo-badge { white-space: nowrap; }
+  .account { gap: var(--s-2); }
+  .account-name { display: none; }
+}
+@media (max-width: 400px) {
+  .header-inner { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .brand > span:last-child { font-size: .9375rem; }
+  .global-search input { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-card, .game-card .cover, .button, .icon-button, .screenshots button, .hero-dots span { transition: none; }
