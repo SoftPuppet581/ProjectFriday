@@ -26,6 +26,11 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 - 설치 위치: Node.js는 C:\Program Files\nodejs, MariaDB는 C:\Program Files\MariaDB 11.8 (이미 열려 있던 터미널은 PATH에 없을 수 있으니 새로 열 것)
 - MariaDB는 윈도우 서비스로 등록되지 않았다. 실행: "C:\Program Files\MariaDB 11.8\bin\mariadbd.exe" --console --bind-address=127.0.0.1 --port=3306 (내 컴퓨터에서만 접속됨)
 
+## 역할 분담
+- Claude Code: 백엔드(backend/), DB, API, 문서. 프론트엔드 코드는 건드리지 않는다
+- Codex: 프론트엔드 UI와 화면(frontend/, React + Vite). 시작 전에 docs/API.md를 읽는다
+- 둘이 같은 파일을 동시에 고치지 않는다. API가 바뀌면 docs/API.md를 같이 갱신한다
+
 ## RESTful API 규칙
 | 동작 | 메서드와 URL | 성공 |
 |------|--------------|------|
@@ -54,7 +59,10 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 
 ## 현재 상태
 - 레포 생성 및 문서(HandOff.md, AI_HANDOFF.md, CLAUDE.md, AGENTS.md) 작성 완료
-- 프로젝트 코드는 아직 없음 (index.html은 미커밋 임시 확인용 파일)
+- 백엔드 1단계(핵심) 완성: Express MVC + MariaDB, 게임 RESTful CRUD, 월/플랫폼/장르/검색/정렬 필터, 입력 검증, 일정한 에러 형식. CRUD와 에러 케이스를 직접 호출해 확인함
+- DB: game_calendar (전용 사용자 gamecal, 접속 정보는 backend/.env에만 있고 git 제외). 샘플 게임 3개는 가짜 데이터
+- 프론트엔드(frontend/)는 아직 없음. Codex 담당. API 명세는 docs/API.md
+- index.html은 미커밋 임시 확인용 파일 (정리 대기)
 
 ## 마지막으로 한 일
 | 날짜 | 도구 | 내용 |
@@ -63,8 +71,9 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 
 ## 다음 할 일
 - [x] Node.js, MariaDB 설치 완료 (Node 26.13.1 / npm 11.20.0, MariaDB 11.8.2 LTS)
-- [ ] MariaDB에 프로젝트 전용 DB와 사용자 만들기 (지금은 root가 비밀번호 없이 접속됨. 비밀번호는 이 파일에 적지 않는다)
-- [ ] 프로젝트 뼈대 (backend/ Express, frontend/ React Vite)
-- [ ] games 테이블 설계와 RESTful CRUD 구현
-- [ ] 1단계(핵심) 완성 후 커밋, 이어서 2단계 이후 진행
+- [x] 프로젝트 전용 DB와 사용자 생성 (root는 아직 비밀번호가 없음. 필요하면 설정. 비밀번호는 이 파일에 적지 않는다)
+- [x] backend 뼈대와 games RESTful CRUD
+- [ ] (Codex) frontend/ 생성: React + Vite, 달력 격자, 필터, 상세, 트레일러 임베드
+- [ ] (Claude) 2단계 백엔드: 즐겨찾기 API, 이번 달 요약 API 등 프론트가 요청하는 것
+- [ ] (Claude) 백엔드 자동 테스트 추가 (현재는 수동 호출로만 확인)
 - [ ] 임시 index.html 정리 (삭제 여부 팀장 확인)
