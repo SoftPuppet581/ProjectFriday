@@ -53,7 +53,8 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
     try {
       response = await fetchImpl(`${root}${path}`, {
         method,
-        headers: { apikey: anonKey, Authorization: `Bearer ${token}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
+        // 새 방식 키(sb_publishable_...)는 JWT가 아니라서 Authorization에 넣지 않고 apikey 헤더로만 보낸다
+        headers: { apikey: anonKey, ...(token === anonKey && anonKey.startsWith('sb_') ? {} : { Authorization: `Bearer ${token}` }), ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch {
@@ -132,7 +133,8 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
     return { token: next.accessToken, expiresAt: new Date(next.expiresAt).toISOString(), user: toUser(profile, next.user.email) };
   }
 
-  const POST_SELECT = 'id,category,title,body,game_id,game_title,created_at,user_id,profiles(id,display_name,avatar),forum_comments(id),forum_likes(user_id)';
+  // profiles!user_id: 글/댓글과 프로필 사이에는 좋아요, 댓글을 거치는 경로도 있어서 어느 연결인지 지정해야 한다
+  const POST_SELECT = 'id,category,title,body,game_id,game_title,created_at,user_id,profiles!user_id(id,display_name,avatar),forum_comments(id),forum_likes(user_id)';
 
   function mapPost(row, withBody) {
     const viewer = myId();
@@ -156,7 +158,7 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
 
   async function forumPost(id) {
     if (!/^[1-9]\d*$/.test(String(id))) throw notFound('글', id);
-    const { data } = await readRest(`forum_posts?id=eq.${id}&select=${POST_SELECT.replace('forum_comments(id)', 'forum_comments(id,body,created_at,user_id,profiles(id,display_name,avatar))')}&forum_comments.order=created_at.asc,id.asc`);
+    const { data } = await readRest(`forum_posts?id=eq.${id}&select=${POST_SELECT.replace('forum_comments(id)', 'forum_comments(id,body,created_at,user_id,profiles!user_id(id,display_name,avatar))')}&forum_comments.order=created_at.asc,id.asc`);
     if (!data?.[0]) throw notFound('글', id);
     const viewer = myId();
     return {
@@ -307,7 +309,7 @@ export function createSupabaseApi({ url, anonKey, base, fetchImpl = (...args) =>
     async addForumComment(postId, body) {
       const text = String(body ?? '').trim();
       if (!text || [...text].length > 1000) throw fieldError('body', '댓글은 1~1000자로 입력해 주세요.');
-      const { data } = await rest('forum_comments?select=id,body,created_at,user_id,profiles(id,display_name,avatar)', {
+      const { data } = await rest('forum_comments?select=id,body,created_at,user_id,profiles!user_id(id,display_name,avatar)', {
         method: 'POST', body: { post_id: Number(postId), body: text }, headers: { Prefer: 'return=representation' },
       }).catch(reject);
       const row = data[0];

@@ -476,7 +476,7 @@ describe('Supabase API: 포럼 글 상세 / 작성', () => {
     assert.equal(post.liked, true);
     assert.equal(post.commentCount, 2);
     assert.deepEqual(post.comments.map((c) => [c.id, c.mine, c.author.displayName]), [[1, true, '나'], [2, false, '탈퇴한 사용자']]);
-    assert.match(calls[0].path, /forum_comments\(id,body,created_at,user_id,profiles\(id,display_name,avatar\)\)/);
+    assert.match(calls[0].path, /forum_comments\(id,body,created_at,user_id,profiles!user_id\(id,display_name,avatar\)\)/);
     assert.match(calls[0].path, /forum_comments\.order=created_at\.asc,id\.asc/);
     assert.match(calls[0].path, /id=eq\.7&/);
   });
