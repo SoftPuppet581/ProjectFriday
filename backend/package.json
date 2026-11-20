@@ -8,7 +8,9 @@
     "dev": "node --watch src/server.js",
     "db:schema": "node scripts/runSql.js db/schema.sql",
     "db:seed": "node scripts/runSql.js db/seed.sql",
-    "test": "node --test test/"
+    "db:clean-samples": "node scripts/runSql.js db/remove-samples.sql",
+    "import": "node scripts/importRawg.js",
+    "test": "node --test --test-concurrency=1 test/"
   },
   "dependencies": {
     "cors": "^2.8.6",

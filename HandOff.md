@@ -4,7 +4,7 @@ ProjectFriday 작업 할당 및 보고 문서입니다. 팀장이 각 팀원의 
 
 - 레포: https://github.com/SoftPuppet581/ProjectFriday (public)
 - 범위: 팀원 4명은 각자 다른 개인 홈페이지를 따로 만듭니다 (바이브 코딩 실습)
-- 팀장 프로젝트: 게임 출시 캘린더 (React + Express + MariaDB, RESTful CRUD). 자세한 내용은 AI_HANDOFF.md
+- 팀장 프로젝트: 달력 중심의 게임 정보 홈페이지 (React + Express + MariaDB, RESTful, 실제 게임 데이터는 RAWG에서 가져옴). 자세한 내용은 AI_HANDOFF.md
 - 팀장: (이름 작성)
 - 팀원: 4명 (A, B, C, D)
 

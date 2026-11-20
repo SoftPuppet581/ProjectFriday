@@ -10,6 +10,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   dateStrings: true, // DATE를 'YYYY-MM-DD' 문자열로 받는다
+  decimalNumbers: true, // DECIMAL(rating)을 문자열이 아닌 숫자로 받는다
   charset: 'utf8mb4',
 });
 
