@@ -1,0 +1,210 @@
+/* 테마 레이어: 기존 스타일 위에 디자인 토큰을 적용한다. 반드시 마지막에 import한다. (기준: docs/DESIGN.md)
+   1) 기존 변수 이름(--surface 등)을 새 토큰에 연결해서 색을 한 곳에서 통일하고
+   2) 눈에 띄는 컴포넌트(상단 바, 히어로, 달력, 카드, 상세, 버튼)를 새 기준으로 덮어쓴다. */
+
+:root {
+  /* ── 기존 변수 → 새 토큰 연결 ── */
+  --page: var(--bg-0);
+  --surface: var(--bg-1);
+  --raised: var(--bg-2);
+  --warm: color-mix(in srgb, var(--accent) 14%, var(--bg-1));
+  --muted: var(--text-2);
+  --faint: var(--text-3);
+  --accent-strong: var(--accent-hover);
+  --radius: var(--r-md);
+  --shadow: rgb(0 0 0 / .45);
+  --motion: var(--t-base);
+  --font-meta: .875rem;
+  --font-body: 1rem;
+  --font-section: 1.75rem;
+  --font-display: clamp(2.5rem, 5.2vw, 4rem);
+
+  font-family: var(--font);
+  color: var(--text-1);
+  background: var(--bg-0);
+}
+
+html, body { overflow-x: clip; background: var(--bg-0); }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-variant-numeric: tabular-nums; line-height: 1.6; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shell { width: min(var(--content), calc(100% - var(--gutter) * 2)); }
+
+/* ── 글자: 자간은 -0.03em보다 좁히지 않는다 ── */
+h1, h2, h3 { letter-spacing: -.02em; }
+.brand { letter-spacing: -.01em; font-weight: 700; }
+.cover-fallback { letter-spacing: 0; font-weight: 600; }
+.section-heading h2 { font-size: var(--font-section); font-weight: 700; letter-spacing: -.02em; line-height: 1.3; }
+.section-count, .calendar-note { color: var(--text-3); }
+
+/* ── 상단 바 ── */
+.site-header {
+  background: color-mix(in srgb, var(--bg-0) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
+.site-header[data-scrolled=true] { background: color-mix(in srgb, var(--bg-0) 72%, transparent); }
+.header-inner { min-height: 64px; }
+.brand-icon { width: 34px; height: 34px; border-radius: 10px; }
+.main-nav { align-self: center; gap: var(--s-1); }
+.main-nav button {
+  height: 36px; padding: 0 16px; border-radius: var(--r-pill); font-size: .9375rem; font-weight: 600; color: var(--text-2);
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.main-nav button:hover { color: var(--text-1); background: var(--bg-2); }
+.main-nav button[aria-current] { color: var(--text-1); background: var(--bg-3); }
+.main-nav button[aria-current]::after { display: none; }
+.global-search {
+  min-height: 38px; width: min(260px, 24vw); border-radius: var(--r-pill); background: var(--bg-2);
+  border: 1px solid var(--line); transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.global-search:focus-within { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.global-search input { padding-left: 16px; font-size: .9375rem; }
+
+/* ── 버튼, 입력, 칩: 모서리는 알약 하나 ── */
+.button, .icon-button {
+  min-height: 40px; border-radius: var(--r-pill); background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--text-1); font-weight: 600; padding-inline: 18px;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast) var(--ease);
+}
+.icon-button { width: 40px; padding: 0; }
+.button:hover:not(:disabled), .icon-button:hover { background: var(--bg-3); border-color: var(--line-strong); }
+.button:active:not(:disabled), .icon-button:active { transform: scale(.97); }
+.button-accent { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.button-accent:hover:not(:disabled) { background: var(--accent-hover); border-color: transparent; color: var(--accent-ink); }
+.button-small { min-height: 32px; padding-inline: 12px; font-size: .875rem; }
+select {
+  min-height: 40px; border-radius: var(--r-pill); background-color: var(--bg-2); border: 1px solid var(--line);
+  color: var(--text-1); font-size: .875rem; font-weight: 600; padding-left: 16px;
+  transition: border-color var(--t-fast);
+}
+select:hover { border-color: var(--line-strong); }
+.segmented { border-radius: var(--r-pill); background: var(--bg-1); border: 1px solid var(--line); padding: 3px; }
+.segmented button { border-radius: var(--r-pill); min-height: 32px; padding-inline: 14px; font-weight: 600; }
+.segmented button[aria-pressed=true] { background: var(--bg-3); color: var(--text-1); }
+.week-summary, .favorite-alert { border-radius: var(--r-pill); }
+.discount { color: var(--positive); background: color-mix(in srgb, var(--positive) 14%, transparent); border-radius: var(--r-pill); padding: 2px 8px; font-weight: 700; }
+
+/* ── 히어로: 좌우 끝까지 꽉 찬 전폭 ── */
+.hero {
+  width: 100vw; max-width: none; margin: calc(var(--s-6) * -1) calc(50% - 50vw) var(--s-8);
+  min-height: clamp(440px, 64vh, 700px); border-radius: 0; background: var(--bg-1);
+}
+.hero::before {
+  background:
+    linear-gradient(90deg, rgb(10 12 16 / .94) 0%, rgb(10 12 16 / .66) 32%, rgb(10 12 16 / .1) 68%, transparent 100%),
+    linear-gradient(0deg, var(--bg-0) 0%, rgb(10 12 16 / .55) 24%, transparent 52%);
+}
+.hero-copy {
+  width: min(var(--content), calc(100% - var(--gutter) * 2)); max-width: none;
+  margin-inline: auto; padding: 0 0 clamp(56px, 8vh, 88px);
+}
+.hero h1 { font-size: var(--font-display); line-height: 1.08; letter-spacing: -.03em; font-weight: 700; max-width: 14em; text-wrap: balance; }
+.hero-meta { margin: var(--s-4) 0 var(--s-5); color: var(--text-2); font-size: 1rem; }
+.hero-meta time { color: var(--text-1); font-weight: 600; }
+.hero-meta time + span { border-left-color: var(--line-strong); }
+.hero .button { min-height: 48px; padding-inline: 26px; font-size: 1rem; }
+.hero-controls {
+  right: max(var(--gutter), calc((100vw - var(--content)) / 2)); bottom: clamp(32px, 6vh, 56px);
+  padding: 4px; gap: 2px; border-radius: var(--r-pill);
+  background: rgb(10 12 16 / .5); border: 1px solid var(--line); backdrop-filter: blur(12px);
+}
+.hero-control, .hero-dots button { border-radius: var(--r-pill); background: transparent; }
+.hero-control:hover, .hero-dots button:hover { background: rgb(255 255 255 / .1); }
+.hero-dots span { background: rgb(255 255 255 / .4); transition: width var(--t-base) var(--ease), background var(--t-base); }
+.hero-dots button[aria-current] span { width: 20px; border-radius: var(--r-pill); background: var(--accent); }
+
+/* ── 달력 ── */
+.panel { border-radius: var(--r-md); background: var(--bg-1); border: 1px solid var(--line); }
+.calendar { border-radius: var(--r-lg); }
+.weekday-row { min-height: 44px; color: var(--text-3); font-size: .8125rem; font-weight: 600; letter-spacing: .02em; border-bottom: 1px solid var(--line); }
+.calendar-day { min-height: 112px; padding: 36px 8px 8px; border-color: var(--line); }
+.calendar-week .calendar-day { min-height: 168px; }
+.calendar-day.has-releases { background: var(--bg-1); }
+.calendar-day.busy { background: color-mix(in srgb, var(--bg-1) 94%, var(--accent)); box-shadow: none; }
+.calendar-day.very-busy { background: color-mix(in srgb, var(--bg-1) 88%, var(--accent)); box-shadow: none; }
+.calendar-day.outside { background: var(--bg-0); }
+.calendar-day.selected { background: var(--warm); box-shadow: inset 0 0 0 1px var(--accent); }
+.day-hitbox { padding: 8px 10px; color: var(--text-2); font-size: .8125rem; font-weight: 600; }
+.day-hitbox:hover { background: rgb(255 255 255 / .03); }
+.day-hitbox time { min-width: 24px; text-align: center; border-radius: var(--r-pill); }
+.calendar-day.outside time { color: var(--text-3); opacity: .6; }
+.calendar-day.current time { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+/* 인기작 1개는 칸을 채우는 16:9로 크게, 나머지는 작게 */
+.day-games { gap: 4px; align-items: flex-start; }
+.day-game { width: calc(50% - 2px); border-radius: var(--r-sm); }
+.day-game:first-child { width: 100%; }
+.day-game .cover, .day-game:first-child .cover { aspect-ratio: 16 / 9; border-radius: var(--r-sm); }
+.day-game:hover .cover { transform: scale(1.04); box-shadow: var(--e-2); filter: none; }
+.day-more { color: var(--text-3); font-size: .8125rem; font-weight: 600; }
+.upcoming { border-radius: var(--r-lg); }
+.upcoming-header { padding: var(--s-4) var(--s-5); }
+.game-row { padding: 12px var(--s-5); }
+.game-row .cover { border-radius: var(--r-sm); }
+.game-row-entry:hover, .game-row:hover { background: var(--bg-2); }
+
+/* ── 카드: 테두리 하나, hover에서만 그림자 ── */
+.game-card { border-radius: var(--r-md); background: var(--bg-1); border: 1px solid var(--line); overflow: hidden; box-shadow: none; transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), border-color var(--t-base); }
+.game-card:hover { transform: translateY(-4px); box-shadow: var(--e-2); border-color: var(--line-strong); }
+.game-card .cover { transition: transform var(--t-slow) var(--ease); }
+.game-card:hover .cover { transform: scale(1.03); }
+.game-card-copy { padding: var(--s-4) var(--s-4) var(--s-2); }
+.game-price strong { font-size: .9375rem; font-weight: 700; }
+.game-price.price-unknown, .price-unknown strong { color: var(--text-3); font-weight: 500; }
+
+/* ── 상세 창 ── */
+.dialog { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-1); box-shadow: var(--e-3); }
+.dialog::backdrop { background: rgb(5 6 9 / .72); backdrop-filter: blur(8px); }
+.dialog-close { background: rgb(10 12 16 / .6); border: 1px solid var(--line); backdrop-filter: blur(8px); }
+.detail-title { padding: var(--s-6) var(--s-6) var(--s-5); }
+.detail-title h2 { font-size: clamp(2rem, 4.4vw, 2.75rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+.detail-body { padding-inline: var(--s-6); gap: var(--s-6); }
+.platform-chips span, .metacritic { border-radius: var(--r-pill); padding: 4px 12px; background: var(--bg-2); border: 1px solid var(--line); font-weight: 600; }
+.purchase { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-5); gap: var(--s-4); }
+.price-large strong { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; }
+.game-price del, .price-note, .price-reason { color: var(--text-3); }
+.screenshots button { border-radius: var(--r-sm); overflow: hidden; transition: transform var(--t-base) var(--ease); }
+.screenshots button:hover { filter: none; transform: scale(1.02); }
+.rating-gauge strong { font-weight: 700; }
+
+/* ── 홈 레일(가로 스크롤)과 뉴스 줄 ── */
+.home-section { margin-bottom: var(--s-8); }
+.home-section .section-heading { margin-bottom: var(--s-5); }
+.home-section .section-heading p { color: var(--text-3); margin-top: var(--s-1); font-size: .875rem; }
+.rail-controls { display: flex; gap: var(--s-2); }
+.rail-scroller { overflow-x: auto; scroll-snap-type: x proximity; padding: var(--s-1) 2px var(--s-4); margin-inline: -2px; scrollbar-width: none; }
+.rail-scroller::-webkit-scrollbar { display: none; }
+.rail-scroller .game-grid { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: clamp(220px, 20vw, 272px); gap: var(--s-4); width: max-content; }
+.rail-scroller .game-card { scroll-snap-align: start; }
+.home-news { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); }
+@media (max-width: 800px) { .home-news { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── 뉴스, 푸터 ── */
+.news .section-heading h1 { letter-spacing: -.03em; font-weight: 700; }
+.news-card-text h2 { letter-spacing: -.02em; }
+.site-footer { border-top: 1px solid var(--line); color: var(--text-3); }
+.footer-inner a { color: var(--text-2); }
+
+/* ── 반응형 ── */
+@media (max-width: 1050px) { :root { --gutter: 24px; } }
+@media (max-width: 800px) {
+  :root { --gutter: 16px; }
+  .hero { min-height: 420px; margin-bottom: var(--s-7); }
+  .hero::before { background: linear-gradient(0deg, var(--bg-0) 0%, rgb(10 12 16 / .78) 40%, rgb(10 12 16 / .2) 100%); }
+  .hero-copy { padding-bottom: 76px; }
+  .hero-controls { left: var(--gutter); right: auto; bottom: 20px; }
+  .detail-title, .detail-body { padding-inline: var(--s-4); }
+  /* 터치 대상은 최소 44px */
+  .main-nav { overflow-x: auto; scrollbar-width: none; }
+  .main-nav::-webkit-scrollbar { display: none; }
+  .main-nav button { height: 44px; padding: 0 14px; flex: 0 0 auto; }
+  .button, .icon-button, select, .segmented button { min-height: 44px; }
+  .icon-button { width: 44px; }
+  .hero-control, .hero-dots button { min-width: 44px; min-height: 44px; }
+  .hero-dots button { min-width: 28px; }
+  .global-search { min-height: 44px; }
+  .global-search button { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-card, .game-card .cover, .button, .icon-button, .screenshots button, .hero-dots span { transition: none; }
+  .game-card:hover, .game-card:hover .cover, .screenshots button:hover { transform: none; }
+}

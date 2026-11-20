@@ -1,0 +1,48 @@
+/* 디자인 토큰: 색, 간격, 모서리, 그림자, 모션의 유일한 정의 위치. 규칙은 docs/DESIGN.md */
+:root {
+  --font: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* 배경 4단계 (위로 갈수록 밝다) */
+  --bg-0: #0a0c10;
+  --bg-1: #11141a;
+  --bg-2: #181c24;
+  --bg-3: #202530;
+  --line: rgb(255 255 255 / .08);
+  --line-strong: rgb(255 255 255 / .16);
+
+  /* 글자 3단계 */
+  --text-1: #f4f5f7;
+  --text-2: #aab0bc;
+  --text-3: #868d9b;
+
+  /* 포인트는 주황 하나 */
+  --accent: #ffac68;
+  --accent-hover: #ffc592;
+  --accent-ink: #231409;
+  --positive: #5ad39b;
+  --danger: #ff6b6b;
+
+  /* 모서리 4종 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* 간격 (4의 배수) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+
+  /* 그림자 3단계 */
+  --e-1: 0 1px 0 rgb(255 255 255 / .04) inset;
+  --e-2: 0 8px 24px rgb(0 0 0 / .35);
+  --e-3: 0 24px 64px rgb(0 0 0 / .55);
+
+  /* 모션 */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --t-fast: 150ms;
+  --t-base: 240ms;
+  --t-slow: 400ms;
+
+  /* 레이아웃 */
+  --content: 1280px;
+  --gutter: 40px;
+}

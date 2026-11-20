@@ -7,6 +7,7 @@ import Forum from './Forum.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
 import News from './News.jsx';
 import Comparison from './Comparison.jsx';
+import { NewsStrip, ThisWeekRail, TopRatedRail } from './HomeRails.jsx';
 import { DateBadge, GameDetail, GameGrid, WaitState } from './ReleaseViews.jsx';
 import { addDays, dDay, monthKey, shiftMonth, toIso, weekRange } from './lib/dates.js';
 import { loadFavorites, loadPlatform, saveFavorites, savePlatform, toggleFavorite } from './lib/storage.js';
@@ -230,6 +231,7 @@ export default function App() {
         {calendarActive && (
           <>
             <HeroCarousel games={featuredGames.data ?? []} fallback={fallback} blocked={Boolean(gameId || comparisonOpen)} onGame={setGameId} />
+            <ThisWeekRail week={weekRange(today, 0)} platform={platform} genre={genre} onGame={setGameId} favorites={favorites} onFavorite={onFavorite} />
             <section className="calendar-section" aria-labelledby="calendar-heading">
               <div className="section-heading">
                 <div className="heading-inline">
@@ -251,6 +253,8 @@ export default function App() {
               <CalendarControls anchor={anchor} mode={mode} onMove={move} onMode={changeMode} onToday={goToday} filters={filters} />
               <CalendarView anchor={anchor} mode={mode} results={periodGames} schedule={schedule} today={today} selectedDay={selectedDay} onDay={selectDay} onGame={setGameId} onAll={() => openCatalog('', period)} />
             </section>
+            <TopRatedRail platform={platform} genre={genre} onGame={setGameId} favorites={favorites} onFavorite={onFavorite} />
+            <NewsStrip onNews={() => setView('news')} />
           </>
         )}
         {view === 'catalog' && <Catalog key={JSON.stringify([query, catalogPeriod, platform, genre])} query={query} period={catalogPeriod} platform={platform} genre={genre} filters={filters} favorites={favorites} onFavorite={onFavorite} onGame={setGameId} onClear={() => { setSearch(''); setPlatform(''); setGenre(''); openCatalog(''); }} />}
