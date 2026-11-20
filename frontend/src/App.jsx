@@ -8,6 +8,8 @@ import HeroCarousel from './HeroCarousel.jsx';
 import News from './News.jsx';
 import Comparison from './Comparison.jsx';
 import AuthDialog from './AuthDialog.jsx';
+import { Avatar } from './Avatar.jsx';
+import ProfileDialog from './ProfileDialog.jsx';
 import { NewsStrip, ThisWeekRail, TopRatedRail } from './HomeRails.jsx';
 import { clearToken, loadToken, saveToken } from './lib/auth.js';
 import { DateBadge, GameDetail, GameGrid, WaitState } from './ReleaseViews.jsx';
@@ -23,7 +25,7 @@ const navigation = [
   ['forum', '포럼'],
 ];
 
-function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLogout }) {
+function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLogout, onProfile }) {
   const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 8);
@@ -51,7 +53,10 @@ function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLog
         </form>
         {user ? (
           <div className="account">
-            <span className="account-name" title={user.email}>{user.displayName}</span>
+            <button type="button" className="account-profile" onClick={onProfile} aria-label="프로필 설정" title={user.email}>
+              <Avatar user={user} size={34} />
+              <span className="account-name">{user.displayName}</span>
+            </button>
             <button type="button" className="button button-small" onClick={onLogout}>로그아웃</button>
           </div>
         ) : (
@@ -146,6 +151,7 @@ export default function App() {
   const [favorites, setFavorites] = useState(loadFavorites);
   const [user, setUser] = useState(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [catalogPeriod, setCatalogPeriod] = useState(null);
@@ -287,7 +293,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header view={view} onView={(next) => next === 'catalog' ? openCatalog('') : setView(next)} search={search} onSearch={setSearch} onSubmit={() => openCatalog(search.trim())} user={user} onLogin={() => setAuthOpen(true)} onLogout={handleLogout} />
+      <Header view={view} onView={(next) => next === 'catalog' ? openCatalog('') : setView(next)} search={search} onSearch={setSearch} onSubmit={() => openCatalog(search.trim())} user={user} onLogin={() => setAuthOpen(true)} onLogout={handleLogout} onProfile={() => setProfileOpen(true)} />
       <main className="shell main-content">
         {compareIds.length > 0 && (
           <div className="comparison-bar">
@@ -326,7 +332,7 @@ export default function App() {
         {view === 'catalog' && <Catalog key={JSON.stringify([query, catalogPeriod, platform, genre])} query={query} period={catalogPeriod} platform={platform} genre={genre} filters={filters} favorites={favorites} onFavorite={onFavorite} onGame={setGameId} onClear={() => { setSearch(''); setPlatform(''); setGenre(''); openCatalog(''); }} />}
         {view === 'news' && <News />}
         {view === 'favorites' && <Favorites ids={favorites} onGame={setGameId} user={user} onLogin={() => setAuthOpen(true)} />}
-        {view === 'forum' && <Forum draftGame={draftGame} onClearDraft={() => setDraftGame(null)} />}
+        {view === 'forum' && <Forum draftGame={draftGame} onClearDraft={() => setDraftGame(null)} user={user} onLogin={() => setAuthOpen(true)} onGame={setGameId} />}
       </main>
       <footer className="site-footer">
         <div className="shell footer-inner">
@@ -335,6 +341,7 @@ export default function App() {
         </div>
       </footer>
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onAuth={handleAuth} />}
+      {profileOpen && user && <ProfileDialog user={user} onClose={() => setProfileOpen(false)} onSaved={(account) => { setUser(account); setProfileOpen(false); }} />}
       {gameId && <GameDetail id={gameId} onClose={() => setGameId(null)} onGame={setGameId} onJump={jump} onDiscuss={discuss} favorites={favorites} onFavorite={onFavorite} compareIds={compareIds} onCompare={updateComparison} />}
       {comparisonOpen && <Comparison ids={compareIds} onRemove={updateComparison} onClose={() => setComparisonOpen(false)} />}
     </div>

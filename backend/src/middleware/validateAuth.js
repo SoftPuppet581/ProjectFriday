@@ -1,6 +1,7 @@
 import HttpError from '../utils/HttpError.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const AVATAR_RE = /^a(0[1-9]|1\d|20)$/;
 
 function readBody(req, allowed) {
   const body = req.body;
@@ -53,8 +54,13 @@ export function validateLogin(req, res, next) {
 }
 
 export function validateProfile(req, res, next) {
-  const { body, errors } = readBody(req, ['displayName', 'preferredPlatform']);
+  const { body, errors } = readBody(req, ['displayName', 'preferredPlatform', 'avatar']);
   const changes = {};
+  // 프로필 사진: 미리 만든 20개의 키(a01~a20) 또는 null(기본 사진)
+  if (body.avatar !== undefined) {
+    if (body.avatar !== null && !(typeof body.avatar === 'string' && AVATAR_RE.test(body.avatar))) errors.push({ field: 'avatar', message: 'a01~a20 중 하나이거나 null(기본 사진)이어야 합니다.' });
+    else changes.avatar = body.avatar;
+  }
   if (body.displayName !== undefined) changes.displayName = checkDisplayName(body.displayName, errors);
   if (body.preferredPlatform !== undefined) {
     const p = body.preferredPlatform;

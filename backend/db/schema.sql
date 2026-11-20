@@ -86,6 +86,51 @@ CREATE TABLE IF NOT EXISTS user_favorites (
   CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 프로필 사진(미리 만든 20개 중 하나의 키, 예: 'a07'. NULL이면 기본 사진)과 시연용 샘플 계정 표시
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS avatar  VARCHAR(20) NULL,
+  ADD COLUMN IF NOT EXISTS is_demo TINYINT UNSIGNED NOT NULL DEFAULT 0;
+
+-- 포럼: 글, 댓글, 좋아요 (사용자가 지워지면 연쇄로 지워진다). game_id에는 외래키를 두지 않는다 (games 삭제 시 에러 방지)
+CREATE TABLE IF NOT EXISTS forum_posts (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    INT UNSIGNED NOT NULL,
+  category   VARCHAR(10) NOT NULL,
+  title      VARCHAR(100) NOT NULL,
+  body       TEXT NOT NULL,
+  game_id    INT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_posts_created (created_at),
+  KEY idx_posts_category (category),
+  KEY idx_posts_user (user_id),
+  KEY idx_posts_game (game_id),
+  CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS forum_comments (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  post_id    INT UNSIGNED NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  body       VARCHAR(1000) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_comments_post (post_id, created_at),
+  KEY idx_comments_user (user_id),
+  CONSTRAINT fk_comments_post FOREIGN KEY (post_id) REFERENCES forum_posts (id) ON DELETE CASCADE,
+  CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS forum_likes (
+  post_id    INT UNSIGNED NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (post_id, user_id),
+  KEY idx_likes_user (user_id),
+  CONSTRAINT fk_likes_post FOREIGN KEY (post_id) REFERENCES forum_posts (id) ON DELETE CASCADE,
+  CONSTRAINT fk_likes_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 게임 뉴스: 여러 언론사 RSS에서 제목, 링크, 짧은 요약, 썸네일만 가져와 저장한다 (본문은 저장하지 않고 원문 링크로 보낸다)
 CREATE TABLE IF NOT EXISTS news (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,

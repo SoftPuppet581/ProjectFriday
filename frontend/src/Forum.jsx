@@ -1,127 +1,220 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, MessageCircle, MessageSquare, PenLine, Plus } from 'lucide-react';
-import { Dialog } from './ReleaseViews.jsx';
+import { useRef, useState } from 'react';
+import { ArrowLeft, Heart, MessageCircle, PenLine, Plus, Trash2 } from 'lucide-react';
+import { api } from './api/client.js';
+import { Avatar } from './Avatar.jsx';
+import { PublishedTime } from './NewsCards.jsx';
+import { Dialog, WaitState } from './ReleaseViews.jsx';
+import { useRequest } from './useRequest.js';
 
-const storageKey = 'projectfriday.forum';
 const categories = ['자유', '질문', '추천', '공략'];
-const topics = [
-  { id: 'starter-now', category: '자유', title: '요즘 어떤 게임을 하고 계세요?', body: '최근 플레이한 게임과 가장 기억에 남는 순간을 소개해 주세요.', replies: [] },
-  { id: 'starter-coop', category: '추천', title: '친구와 함께 할 협동 게임 추천', body: '인원수와 플레이하는 플랫폼을 함께 적어 주면 다른 사람이 고르기 쉬워요.', replies: [] },
-  { id: 'starter-help', category: '질문', title: '게임을 고르기 어려울 때', body: '좋아하는 게임과 찾고 있는 분위기, 플랫폼을 알려 주세요. 서로 게임을 추천해 봐요.', replies: [] },
-];
-const timeLabel = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 
-function readThreads() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
-    if (Array.isArray(saved) && saved.every((item) => item && typeof item.title === 'string' && Array.isArray(item.replies))) return saved;
-  } catch {
-    // 저장소를 사용할 수 없는 경우 기본 주제로 시작한다.
-  }
-  return topics;
+function LoginPrompt({ onLogin, children }) {
+  return (
+    <p className="login-note">
+      {children}
+      <button type="button" className="button button-small" onClick={onLogin}>로그인 / 회원가입</button>
+    </p>
+  );
 }
 
-export default function Forum({ draftGame, onClearDraft }) {
-  const [threads, setThreads] = useState(readThreads);
+// 글 하나: 본문, 좋아요, 댓글
+function Thread({ id, user, onBack, onLogin, onGame, onChanged }) {
+  const request = useRequest(api.forumPost, id);
+  const last = useRef(null);
+  if (request.data) last.current = request.data;
+  const post = request.data ?? last.current; // 댓글을 쓰고 다시 불러오는 동안에도 화면이 깜빡이지 않게
+  const [comment, setComment] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function run(action) {
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+      request.retry();
+      onChanged();
+    } catch (caught) {
+      setError(caught.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!post) {
+    return (
+      <div className="panel thread">
+        <button className="button button-small" type="button" onClick={onBack}><ArrowLeft size={15} /> 목록</button>
+        <WaitState request={request} empty="글을 찾을 수 없어요." />
+      </div>
+    );
+  }
+
+  const toggleLike = () => (user ? run(() => (post.liked ? api.unlikeForumPost(id) : api.likeForumPost(id))) : onLogin());
+  const removePost = () => {
+    if (window.confirm('이 글을 지울까요? 댓글도 함께 지워져요.')) run(async () => { await api.deleteForumPost(id); onBack(); });
+  };
+  const submitComment = (event) => {
+    event.preventDefault();
+    if (comment.trim()) run(async () => { await api.addForumComment(id, comment.trim()); setComment(''); });
+  };
+
+  return (
+    <article className="panel thread">
+      <div className="thread-top">
+        <button className="button button-small" type="button" onClick={onBack}><ArrowLeft size={15} /> 목록</button>
+        {post.mine && <button className="button button-small" type="button" onClick={removePost} disabled={busy}><Trash2 size={15} /> 삭제</button>}
+      </div>
+      <div className="thread-tags">
+        <span className="forum-category">{post.category}</span>
+        {post.game && <button type="button" className="forum-game forum-game-link" onClick={() => onGame(post.game.id)}>{post.game.title}</button>}
+      </div>
+      <h3>{post.title}</h3>
+      <div className="author-line">
+        <Avatar user={post.author} size={40} />
+        <div><strong>{post.author.displayName}</strong><PublishedTime value={post.createdAt} /></div>
+      </div>
+      <p className="thread-body">{post.body}</p>
+      <div className="thread-actions">
+        <button type="button" className="like-button" aria-pressed={post.liked} onClick={toggleLike} disabled={busy}>
+          <Heart size={17} fill={post.liked ? 'currentColor' : 'none'} /> 좋아요 {post.likeCount}
+        </button>
+      </div>
+      {error && <p className="auth-error" role="alert">{error}</p>}
+
+      <h4>댓글 {post.comments.length}</h4>
+      {post.comments.length > 0 && (
+        <ul className="replies">
+          {post.comments.map((entry) => (
+            <li key={entry.id}>
+              <Avatar user={entry.author} size={34} />
+              <div className="reply-copy">
+                <div className="reply-head"><strong>{entry.author.displayName}</strong><PublishedTime value={entry.createdAt} /></div>
+                <p>{entry.body}</p>
+              </div>
+              {entry.mine && (
+                <button type="button" className="icon-button reply-delete" aria-label="내 댓글 삭제" disabled={busy} onClick={() => run(() => api.deleteForumComment(id, entry.id))}><Trash2 size={15} /></button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {user ? (
+        <form className="reply-form" onSubmit={submitComment}>
+          <label htmlFor="reply-body">댓글 작성</label>
+          <textarea id="reply-body" required maxLength={1000} value={comment} onChange={(event) => setComment(event.target.value)} />
+          <button type="submit" className="button button-accent" disabled={!comment.trim() || busy}>댓글 남기기</button>
+        </form>
+      ) : (
+        <LoginPrompt onLogin={onLogin}>댓글을 쓰려면 로그인해 주세요.</LoginPrompt>
+      )}
+    </article>
+  );
+}
+
+export default function Forum({ draftGame, onClearDraft, user, onLogin, onGame }) {
   const [category, setCategory] = useState('');
+  const [sort, setSort] = useState('recent');
   const [activeId, setActiveId] = useState(null);
   const [writing, setWriting] = useState(false);
-  const [reply, setReply] = useState('');
-  const [storageError, setStorageError] = useState(false);
-  const active = threads.find(({ id }) => id === activeId);
-  const filtered = category ? threads.filter((thread) => thread.category === category) : threads;
+  const [formError, setFormError] = useState('');
+  const [posting, setPosting] = useState(false);
+  const list = useRequest(api.forumPosts, { category, sort, limit: 30 });
+  const posts = list.data?.items;
   const isWriting = writing || Boolean(draftGame);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(threads));
-      setStorageError(false);
-    } catch {
-      setStorageError(true);
-    }
-  }, [threads]);
 
   function closeComposer() {
     setWriting(false);
+    setFormError('');
     onClearDraft();
   }
 
-  function publish(event) {
+  async function publish(event) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
-    const title = values.get('title').trim();
-    const body = values.get('body').trim();
-    if (!title || !body) return;
-    const thread = { id: crypto.randomUUID(), category: values.get('category'), title, body, created: Date.now(), replies: [] };
-    setThreads((current) => [thread, ...current]);
-    setCategory('');
-    setActiveId(thread.id);
-    closeComposer();
-  }
-
-  function addReply(event) {
-    event.preventDefault();
-    if (!reply.trim()) return;
-    const message = { id: crypto.randomUUID(), body: reply.trim(), created: Date.now() };
-    setThreads((current) => current.map((thread) => thread.id === activeId ? { ...thread, replies: [...thread.replies, message] } : thread));
-    setReply('');
+    setPosting(true);
+    setFormError('');
+    try {
+      const created = await api.createForumPost({ category: values.get('category'), title: values.get('title').trim(), body: values.get('body').trim() });
+      list.retry();
+      setCategory('');
+      setActiveId(created.id);
+      closeComposer();
+    } catch (caught) {
+      setFormError(caught.errors?.[0]?.message ?? caught.message);
+    } finally {
+      setPosting(false);
+    }
   }
 
   return (
     <section aria-labelledby="forum-heading" className="forum">
       <div className="section-heading">
-        <div><h2 id="forum-heading">게임 포럼</h2><p>글과 댓글은 이 브라우저에 저장됩니다.</p></div>
-        <button className="button button-accent" type="button" onClick={() => setWriting(true)}><Plus size={18} /> 새 글</button>
+        <div><h2 id="forum-heading">게임 포럼</h2><p>게임 이야기를 나누는 곳이에요. 읽기는 누구나, 글쓰기는 로그인이 필요해요.</p></div>
+        <button className="button button-accent" type="button" onClick={() => (user ? setWriting(true) : onLogin())}><Plus size={18} /> 새 글</button>
       </div>
-      {storageError && <p className="placeholder error" role="status">브라우저 저장소에 저장할 수 없어 이번 방문 동안만 글이 유지됩니다.</p>}
-      {active ? (
-        <article className="panel thread">
-          <button className="button button-small" type="button" onClick={() => { setActiveId(null); setReply(''); }}><ArrowLeft size={15} /> 목록</button>
-          <span className="forum-category">{active.category}</span>
-          <h3>{active.title}</h3>
-          <p className="thread-body">{active.body}</p>
-          {active.created && <time dateTime={new Date(active.created).toISOString()}>{timeLabel.format(active.created)}</time>}
-          <h4>댓글 {active.replies.length}</h4>
-          {active.replies.length > 0 && (
-            <ul className="replies">
-              {active.replies.map((message) => <li key={message.id}><p>{message.body}</p><time dateTime={new Date(message.created).toISOString()}>{timeLabel.format(message.created)}</time></li>)}
-            </ul>
-          )}
-          <form className="reply-form" onSubmit={addReply}>
-            <label htmlFor="reply-body">댓글 작성</label>
-            <textarea id="reply-body" required maxLength={1000} value={reply} onChange={(event) => setReply(event.target.value)} />
-            <button type="submit" className="button button-accent" disabled={!reply.trim()}>댓글 남기기</button>
-          </form>
-        </article>
+
+      {activeId ? (
+        <Thread key={activeId} id={activeId} user={user} onLogin={onLogin} onGame={onGame} onBack={() => { setActiveId(null); list.retry(); }} onChanged={list.retry} />
       ) : (
         <div className="panel forum-board">
-          <div className="forum-tabs" aria-label="포럼 분류">
-            {['', ...categories].map((option) => <button key={option} type="button" aria-pressed={category === option} onClick={() => setCategory(option)}>{option || '전체'}</button>)}
+          <div className="forum-toolbar">
+            <div className="forum-tabs" aria-label="포럼 분류">
+              {['', ...categories].map((option) => <button key={option} type="button" aria-pressed={category === option} onClick={() => setCategory(option)}>{option || '전체'}</button>)}
+            </div>
+            <div className="segmented" aria-label="정렬">
+              <button type="button" aria-pressed={sort === 'recent'} onClick={() => setSort('recent')}>최신순</button>
+              <button type="button" aria-pressed={sort === 'popular'} onClick={() => setSort('popular')}>인기순</button>
+            </div>
           </div>
-          {filtered.length > 0 ? (
-            <ul className="forum-list">
-              {filtered.map((thread) => (
-                <li key={thread.id}>
-                  <button className="thread-row" type="button" onClick={() => { setActiveId(thread.id); setReply(''); }}>
-                    <span className="forum-icon"><MessageSquare size={21} /></span>
-                    <span className="thread-copy"><span className="forum-category">{thread.category}</span><strong>{thread.title}</strong><span>{thread.created ? timeLabel.format(thread.created) : '시작 주제'}</span></span>
-                    <span className="thread-count" aria-label={'댓글 ' + thread.replies.length + '개'}><MessageCircle size={16} /> {thread.replies.length}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="placeholder">이 분류에 아직 올라온 글이 없어요.</p>}
+          <WaitState request={list} empty="이 분류에 아직 올라온 글이 없어요.">
+            {posts?.length > 0 ? (
+              <ul className="forum-list">
+                {posts.map((post) => (
+                  <li key={post.id}>
+                    <button className="thread-row" type="button" onClick={() => setActiveId(post.id)}>
+                      <Avatar user={post.author} size={44} />
+                      <span className="thread-copy">
+                        <span className="thread-tags">
+                          <span className="forum-category">{post.category}</span>
+                          {post.game && <span className="forum-game">{post.game.title}</span>}
+                        </span>
+                        <strong>{post.title}</strong>
+                        <span className="thread-excerpt">{post.excerpt}</span>
+                        <span className="thread-meta">{post.author.displayName} · <PublishedTime value={post.createdAt} /></span>
+                      </span>
+                      <span className="thread-stats" aria-label={`좋아요 ${post.likeCount}개, 댓글 ${post.commentCount}개`}>
+                        <span><Heart size={15} /> {post.likeCount}</span>
+                        <span><MessageCircle size={15} /> {post.commentCount}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </WaitState>
         </div>
       )}
+      <p className="forum-sample-note">포럼의 일부 계정과 글은 시연용 샘플입니다.</p>
+
       {isWriting && (
         <Dialog label="포럼에 새 글 쓰기" onClose={closeComposer}>
-          <form className="forum-form" onSubmit={publish}>
-            <h3><PenLine size={21} /> 새 글 쓰기</h3>
-            <label>분류<select name="category" defaultValue="자유">{categories.map((name) => <option key={name}>{name}</option>)}</select></label>
-            <label>제목<input name="title" defaultValue={draftGame ? draftGame + ' 이야기' : ''} maxLength={100} required /></label>
-            <label>내용<textarea name="body" maxLength={3000} rows={6} required /></label>
-            <button type="submit" className="button button-accent">글 올리기</button>
-          </form>
+          {user ? (
+            <form className="forum-form" onSubmit={publish}>
+              <h3><PenLine size={21} /> 새 글 쓰기</h3>
+              <label>분류<select name="category" defaultValue="자유">{categories.map((name) => <option key={name}>{name}</option>)}</select></label>
+              <label>제목<input name="title" defaultValue={draftGame ? draftGame + ' 이야기' : ''} maxLength={100} required /></label>
+              <label>내용<textarea name="body" maxLength={3000} rows={6} required /></label>
+              {formError && <p className="auth-error" role="alert">{formError}</p>}
+              <button type="submit" className="button button-accent" disabled={posting}>{posting ? '올리는 중…' : '글 올리기'}</button>
+            </form>
+          ) : (
+            <div className="forum-form">
+              <h3><PenLine size={21} /> 새 글 쓰기</h3>
+              <LoginPrompt onLogin={() => { closeComposer(); onLogin(); }}>글을 쓰려면 로그인해 주세요.</LoginPrompt>
+            </div>
+          )}
         </Dialog>
       )}
     </section>

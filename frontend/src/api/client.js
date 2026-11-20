@@ -98,6 +98,20 @@ export function createApi({ baseUrl = 'http://localhost:3000', fetchImpl = (...a
     // 로그인 전에 담아 둔 관심 게임을 계정에 합친다. 반환: 계정의 전체 관심 게임 id 배열
     mergeFavorites: async (gameIds) => (await request('POST', '/api/users/me/favorites', { body: { gameIds } })).data, // 토큰 필요
 
+    // ---- 포럼 (읽기는 누구나, 쓰기/좋아요/삭제는 로그인 필요) ----
+    // params: { category, q, gameId, sort: 'recent'|'popular', limit, page }. 반환: { items, total }
+    async forumPosts(params) {
+      const { data, response } = await request('GET', '/api/forum/posts', { params });
+      return { items: data, total: Number(response.headers.get('X-Total-Count') ?? data.length) };
+    },
+    forumPost: async (id) => (await request('GET', `/api/forum/posts/${id}`)).data, // 본문과 댓글 포함
+    createForumPost: async ({ category, title, body, gameId }) => (await request('POST', '/api/forum/posts', { body: { category, title, body, gameId } })).data, // 토큰 필요
+    deleteForumPost: async (id) => (await request('DELETE', `/api/forum/posts/${id}`)).data, // 토큰 필요, 내 글만
+    addForumComment: async (postId, body) => (await request('POST', `/api/forum/posts/${postId}/comments`, { body: { body } })).data, // 토큰 필요
+    deleteForumComment: async (postId, commentId) => (await request('DELETE', `/api/forum/posts/${postId}/comments/${commentId}`)).data, // 토큰 필요, 내 댓글만
+    likeForumPost: async (id) => (await request('PUT', `/api/forum/posts/${id}/like`)).data, // 토큰 필요
+    unlikeForumPost: async (id) => (await request('DELETE', `/api/forum/posts/${id}/like`)).data, // 토큰 필요
+
     // 구글 캘린더 등에 추가할 .ics 파일 주소 (링크로 걸면 다운로드된다)
     icsUrl: (id) => `${baseUrl}/api/games/${id}/calendar.ics`,
   };

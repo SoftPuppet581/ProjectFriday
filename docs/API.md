@@ -112,6 +112,35 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - **로그인 전에 이 브라우저에 담아 둔 관심 게임은 로그인할 때 `POST /api/users/me/favorites`로 합치고**, 합친 뒤 로컬 목록을 비웁니다(다음 로그인 때 다시 합쳐지지 않게). 구현은 `App.jsx`의 `handleAuth`입니다.
 - 이메일 인증, 비밀번호 재설정, 계정 삭제는 없습니다(실습용). 비밀번호를 잊으면 DB에서 계정을 지워야 합니다.
 
+## 프로필 사진
+- 내 정보(`user`)와 포럼의 작성자(`author`)에 `avatar` 필드가 있습니다. 값은 `"a01"`~`"a20"` 중 하나이거나 `null`(기본 사진)입니다.
+- 사진 파일은 `frontend/public/avatars/`의 SVG입니다 (`default.svg`, `a01.svg`~`a20.svg`, `scripts/makeAvatars.mjs`로 생성). 화면에서는 `Avatar` 컴포넌트와 `lib/avatars.js`의 `avatarPath(key)`를 쓰세요. 알 수 없는 값은 자동으로 기본 사진이 됩니다.
+- 바꾸기: `PATCH /api/users/me` `{ "avatar": "a12" }` (`null`이면 기본 사진). 다른 값은 `400`입니다. 직접 올린 사진 업로드는 지원하지 않습니다.
+
+## 포럼 (`/api/forum`)
+읽기는 누구나, 쓰기/좋아요/삭제는 로그인(토큰)이 필요합니다. 분류는 `자유`, `질문`, `추천`, `공략` 네 가지입니다.
+
+| 동작 | 요청 | 성공 |
+|------|------|------|
+| 글 목록 | `GET /api/forum/posts` | 200 글 요약 배열, `X-Total-Count` 헤더 |
+| 글 상세 | `GET /api/forum/posts/:postId` | 200 본문과 댓글 포함 |
+| 글 쓰기 | `POST /api/forum/posts` `{ category, title, body, gameId? }` | 201 글 (토큰 필요) |
+| 글 삭제 | `DELETE /api/forum/posts/:postId` | 204 (내 글만, 남의 글은 `403`) |
+| 댓글 쓰기 | `POST /api/forum/posts/:postId/comments` `{ body }` | 201 댓글 (토큰 필요) |
+| 댓글 삭제 | `DELETE /api/forum/posts/:postId/comments/:commentId` | 204 (내 댓글만) |
+| 좋아요 | `PUT /api/forum/posts/:postId/like` | 204 (여러 번 눌러도 한 번만) |
+| 좋아요 취소 | `DELETE /api/forum/posts/:postId/like` | 204 |
+
+- 목록 쿼리(모두 선택): `category`, `q`(제목/내용 검색), `gameId`, `sort=recent`(기본)|`popular`(좋아요×2+댓글 순), `limit`(1~50, 기본 20), `page`
+- 글 객체: `{ id, category, title, excerpt|body, author: { id, displayName, avatar }, game: { id, title } | null, createdAt, commentCount, likeCount, liked, mine, comments? }`. 목록에는 본문 대신 140자 `excerpt`가, 상세에는 `body`와 `comments`가 있습니다. **작성자의 이메일은 어디에도 나오지 않습니다.**
+- `liked`(내가 좋아요 했는지)와 `mine`(내 글인지)은 보는 사람 기준이고, 로그인 안 했으면 모두 `false`입니다. 댓글에도 `mine`이 있습니다.
+- 글이나 계정이 지워지면 딸린 댓글과 좋아요도 같이 지워집니다.
+
+### 시연용 샘플 계정
+- `npm run seed:demo`(backend)가 **가상의 샘플 계정 20개**와 글 18개, 댓글 43개, 좋아요 63개를 넣습니다. 프로필 사진 20개를 하나씩 쓰고, 시각은 최근 일주일에 흩어집니다. 다시 실행하면 샘플만 지우고 새로 넣습니다.
+- 샘플 계정은 DB에 `is_demo = 1`이 붙고, 이메일은 존재할 수 없는 `.invalid` 주소이며, 비밀번호는 무작위로 만들어 버립니다. **아무도 로그인할 수 없고 토큰도 서버가 거부합니다.**
+- 지우기: `npm run seed:demo:remove` (샘플만 지워지고 실제 사용자의 계정과 글은 그대로). 포럼 화면 아래에 "포럼의 일부 계정과 글은 시연용 샘플입니다" 안내가 표시됩니다.
+
 ## 스토어 링크, 가격, 바로 가기 링크
 게임 객체에 아래 필드가 항상 들어 있습니다. **전부 읽기 전용**입니다 (API로 쓸 수 없고, `PUT`으로 게임을 덮어써도 지워지지 않습니다).
 ```json

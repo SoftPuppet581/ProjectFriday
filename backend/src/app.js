@@ -3,6 +3,7 @@ import cors from 'cors';
 import gamesRouter, { calendarRouter, metaRouter } from './routes/games.js';
 import newsRouter from './routes/news.js';
 import { usersRouter, sessionsRouter } from './routes/users.js';
+import forumRouter from './routes/forum.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/calendar', calendarRouter);
 app.use('/api/news', newsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/sessions', sessionsRouter);
+app.use('/api/forum', forumRouter);
 app.use('/api', metaRouter);
 
 app.use(notFoundHandler);

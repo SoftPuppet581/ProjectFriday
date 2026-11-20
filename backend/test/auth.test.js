@@ -63,7 +63,9 @@ describe('POST /api/users (회원가입)', () => {
     assert.equal(res.headers.get('location'), '/api/users/me');
     assert.ok(res.body.token.length >= 40);
     assert.match(res.body.expiresAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
-    assert.deepEqual(Object.keys(res.body.user).sort(), ['createdAt', 'displayName', 'email', 'id', 'preferredPlatform']);
+    assert.deepEqual(Object.keys(res.body.user).sort(), ['avatar', 'createdAt', 'displayName', 'email', 'id', 'preferredPlatform']);
+    assert.equal(res.body.user.avatar, null); // 처음에는 기본 사진
+    assert.ok(Math.abs(Date.parse(res.body.user.createdAt) - Date.now()) < 15000, '가입 시각이 서버 시간대 때문에 어긋나면 안 된다');
     assert.equal(res.body.user.email, 'a@example.com'); // 소문자로 정리
     assert.equal(res.body.user.displayName, '테스터');
     assert.ok(!res.text.includes(PASSWORD));
@@ -193,6 +195,32 @@ describe('GET/PATCH /api/users/me', () => {
     assert.equal(changed.body.preferredPlatform, 'PC');
     assert.equal((await api('GET', '/api/users/me', undefined, h)).body.preferredPlatform, 'PC');
     assert.equal((await api('PATCH', '/api/users/me', { preferredPlatform: null }, h)).body.preferredPlatform, null);
+  });
+
+  test('프로필 사진은 a01~a20 중에서 고르고 null로 기본 사진으로 되돌린다', async () => {
+    const { token } = await registered();
+    const h = bearer(token);
+    for (const avatar of ['a01', 'a07', 'a20']) {
+      const res = await api('PATCH', '/api/users/me', { avatar }, h);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.avatar, avatar);
+    }
+    assert.equal((await api('GET', '/api/users/me', undefined, h)).body.avatar, 'a20');
+    assert.equal((await api('PATCH', '/api/users/me', { avatar: null }, h)).body.avatar, null);
+  });
+
+  test('없는 사진 키나 이상한 값은 400 (경로 조작 문자 포함)', async () => {
+    const { token } = await registered();
+    for (const avatar of ['a00', 'a21', 'a1', '07', 'b05', 'default', '../a01', 'a01.svg', '', 7, ['a01']]) {
+      assert.equal((await api('PATCH', '/api/users/me', { avatar }, bearer(token))).status, 400, JSON.stringify(avatar));
+    }
+  });
+
+  test('시연용 샘플 계정(is_demo)의 토큰은 쓸 수 없다', async () => {
+    const { token } = await registered();
+    assert.equal((await api('GET', '/api/users/me', undefined, bearer(token))).status, 200);
+    await ctx.pool.query('UPDATE users SET is_demo = 1');
+    assert.equal((await api('GET', '/api/users/me', undefined, bearer(token))).status, 401);
   });
 
   test('잘못된 값이나 바꿀 수 없는 필드(이메일, 비밀번호)는 400', async () => {
