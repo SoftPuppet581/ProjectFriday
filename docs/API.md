@@ -89,6 +89,29 @@ API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에�
 - 출시작이 있는 날짜만 들어 있습니다. 없는 날은 칸을 비워 두세요.
 - `games`는 인기순 상위 `top`개이고, `count`는 그날의 전체 개수입니다. ("+N개" = `count - games.length`)
 
+## 회원, 로그인, 개인 기능 (관심 게임 · 선호 플랫폼)
+이메일 + 비밀번호로 가입하고 로그인하면 **토큰**을 받습니다. 토큰이 필요한 요청에는 `Authorization: Bearer <토큰>` 헤더를 붙입니다. (`frontend/src/api/client.js`의 `api`가 저장된 토큰을 자동으로 붙여 줍니다.) 토큰은 14일 뒤 만료되고, 서버에는 토큰의 해시만 저장됩니다.
+
+| 동작 | 요청 | 성공 | 토큰 |
+|------|------|------|------|
+| 회원가입 | `POST /api/users` `{ email, password, displayName }` | 201 `{ token, expiresAt, user }` (가입과 동시에 로그인) | 불필요 |
+| 로그인 | `POST /api/sessions` `{ email, password }` | 201 `{ token, expiresAt, user }` | 불필요 |
+| 로그아웃 | `DELETE /api/sessions/current` | 204 (이 토큰만 무효, 다른 기기는 유지) | 필요 |
+| 내 정보 | `GET /api/users/me` | 200 `{ id, email, displayName, preferredPlatform, createdAt }` | 필요 |
+| 내 정보 수정 | `PATCH /api/users/me` `{ displayName?, preferredPlatform? }` | 200 내 정보 (`preferredPlatform: null`로 비우기) | 필요 |
+| 관심 게임 id 목록 | `GET /api/users/me/favorites/ids` | 200 `[1, 5, 9]` (최근에 담은 순) | 필요 |
+| 관심 게임 목록 | `GET /api/users/me/favorites` | 200 게임 객체 배열 (게임 목록과 같은 모양) | 필요 |
+| 관심 게임 추가 | `PUT /api/users/me/favorites/:gameId` | 204 (이미 있어도 204, 없는 게임은 404) | 필요 |
+| 관심 게임 삭제 | `DELETE /api/users/me/favorites/:gameId` | 204 (없는 걸 지워도 204) | 필요 |
+| 관심 게임 일괄 추가 | `POST /api/users/me/favorites` `{ gameIds: [1, 2] }` | 200 계정의 전체 id 배열 (있는 게임만 합치고 중복은 무시) | 필요 |
+
+- **가입 규칙**: 이메일 형식(대소문자 무시, 공백 제거), 비밀번호 8~128자에 글자와 숫자 포함, 닉네임 1~40자. 같은 이메일이면 `409`, 규칙 위반은 `400`과 `errors[{ field, message }]`.
+- **로그인 실패는 항상 같은 `401` 응답**입니다("이메일 또는 비밀번호가 올바르지 않습니다."). 이메일이 가입되어 있는지 알 수 없게 하려는 것입니다. 같은 이메일+주소로 **8번 틀리면 10분간 `429`**(`Retry-After` 헤더)이고, 성공하면 횟수가 지워집니다.
+- 토큰이 없거나 만료되었거나 잘못됐으면 `401`("로그인이 필요합니다."). 화면에서는 로그아웃 상태로 돌려 보내세요.
+- 응답 어디에도 비밀번호나 해시는 없습니다. 비밀번호는 `scrypt`(솔트 포함)로 저장됩니다.
+- **로그인 전에 이 브라우저에 담아 둔 관심 게임은 로그인할 때 `POST /api/users/me/favorites`로 합치고**, 합친 뒤 로컬 목록을 비웁니다(다음 로그인 때 다시 합쳐지지 않게). 구현은 `App.jsx`의 `handleAuth`입니다.
+- 이메일 인증, 비밀번호 재설정, 계정 삭제는 없습니다(실습용). 비밀번호를 잊으면 DB에서 계정을 지워야 합니다.
+
 ## 스토어 링크, 가격, 바로 가기 링크
 게임 객체에 아래 필드가 항상 들어 있습니다. **전부 읽기 전용**입니다 (API로 쓸 수 없고, `PUT`으로 게임을 덮어써도 지워지지 않습니다).
 ```json

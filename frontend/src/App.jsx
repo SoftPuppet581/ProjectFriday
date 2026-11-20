@@ -7,7 +7,9 @@ import Forum from './Forum.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
 import News from './News.jsx';
 import Comparison from './Comparison.jsx';
+import AuthDialog from './AuthDialog.jsx';
 import { NewsStrip, ThisWeekRail, TopRatedRail } from './HomeRails.jsx';
+import { clearToken, loadToken, saveToken } from './lib/auth.js';
 import { DateBadge, GameDetail, GameGrid, WaitState } from './ReleaseViews.jsx';
 import { addDays, dDay, monthKey, shiftMonth, toIso, weekRange } from './lib/dates.js';
 import { loadFavorites, loadPlatform, saveFavorites, savePlatform, toggleFavorite } from './lib/storage.js';
@@ -21,7 +23,7 @@ const navigation = [
   ['forum', '포럼'],
 ];
 
-function Header({ view, onView, search, onSearch, onSubmit }) {
+function Header({ view, onView, search, onSearch, onSubmit, user, onLogin, onLogout }) {
   const [scrolled, setScrolled] = useState(() => window.scrollY > 8);
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 8);
@@ -47,6 +49,14 @@ function Header({ view, onView, search, onSearch, onSubmit }) {
           <input aria-label="게임 검색" placeholder="게임 검색" value={search} onChange={(event) => onSearch(event.target.value)} />
           <button type="submit" aria-label="검색 실행"><Search size={18} /></button>
         </form>
+        {user ? (
+          <div className="account">
+            <span className="account-name" title={user.email}>{user.displayName}</span>
+            <button type="button" className="button button-small" onClick={onLogout}>로그아웃</button>
+          </div>
+        ) : (
+          <button type="button" className="button button-small button-accent" onClick={onLogin}>로그인</button>
+        )}
       </div>
     </header>
   );
@@ -103,11 +113,17 @@ function Catalog({ query, period, platform, genre, filters, favorites, onFavorit
   );
 }
 
-function Favorites({ ids, onGame }) {
+function Favorites({ ids, onGame, user, onLogin }) {
   const request = useRequest(ids.length ? fetchFavorites : null, ids);
   return (
     <section aria-labelledby="favorites-heading">
       <div className="section-heading"><div><h2 id="favorites-heading">관심 게임</h2><p>{ids.length}개 게임</p></div></div>
+      {!user && (
+        <p className="login-note">
+          지금은 이 브라우저에만 저장돼요. 로그인하면 계정에 저장되어 다른 기기에서도 볼 수 있어요.
+          <button type="button" className="button button-small" onClick={onLogin}>로그인 / 회원가입</button>
+        </p>
+      )}
       <WaitState request={request} empty="게임 상세에서 관심 게임을 추가할 수 있어요.">
         {request.data?.length > 0 ? <GameGrid games={request.data} onGame={onGame} /> : null}
       </WaitState>
@@ -128,6 +144,8 @@ export default function App() {
   const [platform, setPlatform] = useState(() => loadPlatform() || '');
   const [genre, setGenre] = useState('');
   const [favorites, setFavorites] = useState(loadFavorites);
+  const [user, setUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [catalogPeriod, setCatalogPeriod] = useState(null);
@@ -159,7 +177,24 @@ export default function App() {
   const weekCount = weekSummary.data?.reduce((total, entry) => total + entry.count, 0);
 
   useEffect(() => savePlatform(platform), [platform]);
-  useEffect(() => saveFavorites(favorites), [favorites]);
+  // 로그인한 동안에는 관심 게임을 계정(서버)에 저장하므로, 이 브라우저의 비로그인 목록은 건드리지 않는다
+  useEffect(() => { if (!user) saveFavorites(favorites); }, [favorites, user]);
+
+  // 새로고침해도 로그인이 유지되게: 저장된 토큰으로 내 정보와 관심 게임을 다시 불러온다
+  useEffect(() => {
+    if (!loadToken()) return;
+    api.me().then((account) => {
+      setUser(account);
+      if (account.preferredPlatform) setPlatform(account.preferredPlatform);
+      return api.myFavoriteIds().then(setFavorites);
+    }).catch((error) => { if (error.status === 401) clearToken(); });
+  }, []);
+
+  // 로그인한 사용자의 선호 플랫폼을 계정에 저장한다
+  const userId = user?.id;
+  useEffect(() => {
+    if (userId) api.updateMe({ preferredPlatform: platform || null }).catch(() => {});
+  }, [platform, userId]);
 
   function move(direction) {
     setSelectedDay(null);
@@ -211,7 +246,38 @@ export default function App() {
     setCompareIds((current) => current.includes(id) ? current.filter((entry) => entry !== id) : current.length < 2 ? [...current, id] : current);
   }
 
-  const onFavorite = (id) => setFavorites((current) => toggleFavorite(current, id));
+  // 로그인 성공: 토큰을 저장하고, 로그인 전에 이 브라우저에 담아 둔 관심 게임을 계정에 합친다
+  async function handleAuth({ token, user: account }) {
+    saveToken(token);
+    setUser(account);
+    setAuthOpen(false);
+    if (account.preferredPlatform) setPlatform(account.preferredPlatform);
+    try {
+      const local = loadFavorites();
+      setFavorites(local.length ? await api.mergeFavorites(local) : await api.myFavoriteIds());
+      if (local.length) saveFavorites([]); // 합쳤으니 다음 로그인 때 다시 합쳐지지 않게 비운다
+    } catch {
+      setFavorites([]);
+    }
+  }
+
+  function handleLogout() {
+    api.logout().catch(() => {}); // 서버 세션 삭제는 실패해도 이 브라우저에서는 로그아웃된다
+    clearToken();
+    setUser(null);
+    setFavorites([]);
+  }
+
+  // 관심 게임 토글: 화면은 먼저 바꾸고(빠른 반응), 로그인 상태면 서버에도 저장한다. 실패하면 되돌린다
+  const onFavorite = (id) => {
+    const adding = !favorites.includes(id);
+    setFavorites((current) => toggleFavorite(current, id));
+    if (!user) return;
+    (adding ? api.addFavorite(id) : api.removeFavorite(id)).catch((error) => {
+      setFavorites((current) => (adding ? current.filter((entry) => entry !== id) : [...current, id]));
+      if (error.status === 401) handleLogout(); // 로그인이 만료됨
+    });
+  };
   const filters = (
     <>
       <FilterSelect label="플랫폼" value={platform} options={platformOptions.data || []} onChange={setPlatform} />
@@ -221,7 +287,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header view={view} onView={(next) => next === 'catalog' ? openCatalog('') : setView(next)} search={search} onSearch={setSearch} onSubmit={() => openCatalog(search.trim())} />
+      <Header view={view} onView={(next) => next === 'catalog' ? openCatalog('') : setView(next)} search={search} onSearch={setSearch} onSubmit={() => openCatalog(search.trim())} user={user} onLogin={() => setAuthOpen(true)} onLogout={handleLogout} />
       <main className="shell main-content">
         {compareIds.length > 0 && (
           <div className="comparison-bar">
@@ -259,7 +325,7 @@ export default function App() {
         )}
         {view === 'catalog' && <Catalog key={JSON.stringify([query, catalogPeriod, platform, genre])} query={query} period={catalogPeriod} platform={platform} genre={genre} filters={filters} favorites={favorites} onFavorite={onFavorite} onGame={setGameId} onClear={() => { setSearch(''); setPlatform(''); setGenre(''); openCatalog(''); }} />}
         {view === 'news' && <News />}
-        {view === 'favorites' && <Favorites ids={favorites} onGame={setGameId} />}
+        {view === 'favorites' && <Favorites ids={favorites} onGame={setGameId} user={user} onLogin={() => setAuthOpen(true)} />}
         {view === 'forum' && <Forum draftGame={draftGame} onClearDraft={() => setDraftGame(null)} />}
       </main>
       <footer className="site-footer">
@@ -268,6 +334,7 @@ export default function App() {
           <a href="https://rawg.io/" target="_blank" rel="noreferrer">Data from RAWG</a>
         </div>
       </footer>
+      {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onAuth={handleAuth} />}
       {gameId && <GameDetail id={gameId} onClose={() => setGameId(null)} onGame={setGameId} onJump={jump} onDiscuss={discuss} favorites={favorites} onFavorite={onFavorite} compareIds={compareIds} onCompare={updateComparison} />}
       {comparisonOpen && <Comparison ids={compareIds} onRemove={updateComparison} onClose={() => setComparisonOpen(false)} />}
     </div>

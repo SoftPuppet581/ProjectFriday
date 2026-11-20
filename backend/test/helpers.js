@@ -35,8 +35,8 @@ export async function setup() {
   });
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  async function api(method, path, body) {
-    const options = { method, headers: { 'content-type': 'application/json' } };
+  async function api(method, path, body, headers = {}) {
+    const options = { method, headers: { 'content-type': 'application/json', ...headers } };
     if (body !== undefined) options.body = typeof body === 'string' ? body : JSON.stringify(body);
     const res = await fetch(`${base}${path}`, options);
     const text = await res.text();

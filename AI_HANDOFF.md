@@ -17,6 +17,9 @@
 - **성인 게임은 전부 제외한다 (팀장 지시).** DB에서 이미 삭제했고, 앞으로 가져올 때도 걸러진다. 성인 게임을 다시 넣거나 화면에 보여 주지 않는다
 - **GTA VI는 이 사이트의 대작이다.** 메인(히어로) 캐러셀의 첫 슬라이드이고, 다른 메이저 게임 5개(Wolverine, RE Requiem, Gears of War: E-Day, Forza Horizon 6, 007 First Light)와 함께 슬라이드마다 트레일러가 메인에서 자동 재생된다
 - 게임 뉴스 페이지가 있다 (RSS 6곳에서 가져온 기사 제목, 요약, 썸네일, 원문 링크)
+- **회원가입/로그인과 개인 기능이 있다** (팀장 요청). 이메일+비밀번호, 로그인하면 토큰(Bearer, 14일). 관심 게임과 선호 플랫폼이 계정에 저장된다. 로그인 전에 담은 관심 게임은 로그인 때 계정에 합친다. 이메일 인증/비밀번호 재설정은 없다. 자세한 내용은 docs/API.md "회원, 로그인, 개인 기능"
+  - 백엔드: `routes/users.js`, `controllers/authController.js`, `models/User.js`, `middleware/{auth,validateAuth,rateLimit}.js`, `services/passwords.js` (테이블 users, sessions, user_favorites)
+  - 프론트: `AuthDialog.jsx`(로그인/회원가입 창), `lib/auth.js`(토큰 저장), `App.jsx`의 handleAuth/handleLogout/onFavorite, 헤더의 로그인 버튼과 닉네임, 관심 게임 화면의 로그인 안내
 
 ## 아키텍처
 ```
@@ -67,6 +70,7 @@ RAWG API ──(npm run import, 이미 실행함)──▶ MariaDB ◀── Exp
 - 홈에 **가로 레일 3개** 추가: `HomeRails.jsx` (이번 주 출시, 평점 높은 게임, 최신 게임 뉴스). 순서는 히어로 → 이번 주 출시 → 달력 → 평점 높은 게임 → 뉴스
 - 확인: 빌드 통과, 프론트 모듈 테스트 통과, 1280폭에서 레일 3개가 실제 데이터로 나오고 가로 넘침 없음, 새 콘솔 에러 없음. 이 PC의 브라우저 창이 작아서 **캡처 해상도가 낮아 눈으로 세밀하게는 못 봤다.** 측정값(크기, 글꼴, 개수)으로만 확인했다
 - 모바일은 팀장 지시로 건드리지 않았다 (Codex가 만든 날짜별 목록은 그대로)
+- **로그인/회원가입 구현 완료 (Claude)**: 백엔드 테스트 166개, 프론트 모듈 테스트 49개 통과. 브라우저에서 가입 → 비로그인 때 담은 관심 게임 2개가 계정으로 합쳐짐 → 새로고침해도 로그인 유지 → 관심 해제가 서버에 저장 → 로그아웃(서버에서 토큰 무효) → 틀린 비밀번호 메시지 → 재로그인 시 관심 게임 복원까지 끝까지 확인했다. 확인용 테스트 계정은 삭제했다 (DB의 users/sessions/user_favorites는 비어 있다)
 
 **남은 것 (Codex가 이어서. 진지한 프로젝트가 아니라서 선택 사항)**
 - `styles.css`, `cinema.css`, `explore.css`, `news.css`의 흩어진 `#hex` 색을 `var(--...)` 토큰으로 바꾸고, 그 파일들의 `:root` 중복 정의를 지운 뒤 theme.css의 "기존 변수 → 새 토큰 연결" 블록을 없앤다 (지금은 theme.css가 덮어써서 동작은 같다)

@@ -166,6 +166,33 @@ select:hover { border-color: var(--line-strong); }
 .screenshots button:hover { filter: none; transform: scale(1.02); }
 .rating-gauge strong { font-weight: 700; }
 
+/* ── 로그인 창, 계정 표시 ── */
+.account { display: flex; align-items: center; gap: var(--s-3); flex: 0 0 auto; }
+.account-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .875rem; font-weight: 600; color: var(--text-2); }
+.dialog.auth-dialog { width: min(440px, calc(100% - 32px)); }
+.auth-form { display: grid; gap: var(--s-4); padding: var(--s-6); }
+.auth-form h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; padding-right: var(--s-6); }
+.auth-note { color: var(--text-2); font-size: .9375rem; margin-top: calc(var(--s-2) * -1); }
+.field { display: grid; gap: var(--s-2); }
+.field > span { font-size: .875rem; font-weight: 600; color: var(--text-2); }
+.field input {
+  min-height: 46px; padding: 0 var(--s-4); border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--bg-2); color: var(--text-1); font-size: 1rem; outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.field input[aria-invalid=true] { border-color: var(--danger); }
+.field small { min-height: 1.2em; font-size: .8125rem; line-height: 1.4; }
+.field-error { color: var(--danger); }
+.field-hint { color: var(--text-3); }
+.auth-error { color: var(--danger); font-size: .875rem; min-height: 1.2em; margin-top: calc(var(--s-3) * -1); }
+.auth-submit { min-height: 48px; font-size: 1rem; }
+.auth-switch { text-align: center; color: var(--text-2); font-size: .9375rem; }
+.auth-fineprint { text-align: center; color: var(--text-3); font-size: .8125rem; margin-top: calc(var(--s-2) * -1); }
+.link-button { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.link-button:hover { color: var(--accent-hover); }
+.login-note { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-3) var(--s-4); margin: 0 0 var(--s-5); padding: var(--s-4) var(--s-5); border-radius: var(--r-md); background: var(--bg-1); border: 1px solid var(--line); color: var(--text-2); font-size: .9375rem; }
+
 /* ── 홈 레일(가로 스크롤)과 뉴스 줄 ── */
 .home-section { margin-bottom: var(--s-8); }
 .home-section .section-heading { margin-bottom: var(--s-5); }

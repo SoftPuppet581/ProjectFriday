@@ -52,6 +52,40 @@ ALTER TABLE games
   ADD KEY IF NOT EXISTS idx_games_rating (rating),
   ADD KEY IF NOT EXISTS idx_games_popularity (popularity);
 
+-- 회원, 로그인 세션, 계정에 저장하는 관심 게임
+-- (user_favorites.game_id에는 일부러 외래키를 두지 않았다: 성인 게임 삭제 등으로 games 행이 지워져도 에러가 나지 않게 하고,
+--  목록을 만들 때는 games와 조인해서 없는 게임은 자연스럽게 빠진다)
+CREATE TABLE IF NOT EXISTS users (
+  id                 INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  email              VARCHAR(190) NOT NULL,
+  display_name       VARCHAR(40) NOT NULL,
+  password_hash      VARCHAR(255) NOT NULL,
+  preferred_platform VARCHAR(50) NULL,
+  created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash CHAR(64) NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME NOT NULL,
+  PRIMARY KEY (token_hash),
+  KEY idx_sessions_user (user_id),
+  KEY idx_sessions_expires (expires_at),
+  CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+  user_id    INT UNSIGNED NOT NULL,
+  game_id    INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, game_id),
+  KEY idx_favorites_game (game_id),
+  CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 게임 뉴스: 여러 언론사 RSS에서 제목, 링크, 짧은 요약, 썸네일만 가져와 저장한다 (본문은 저장하지 않고 원문 링크로 보낸다)
 CREATE TABLE IF NOT EXISTS news (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
