@@ -1,6 +1,7 @@
 import { loadToken } from '../lib/auth.js';
 import { ApiError } from './errors.js';
 import { createStaticApi } from './staticApi.js';
+import { createSupabaseApi } from './supabaseApi.js';
 
 // 백엔드 API 호출 모듈 (화면 코드 없음). docs/API.md 참고.
 // 사용 예: import { api } from './api/client.js';  const { items, total } = await api.listGames({ month: '2026-12' });
@@ -115,8 +116,18 @@ export function createApi({ baseUrl = 'http://localhost:3000', fetchImpl = (...a
 
 // 기본 인스턴스. 주소를 바꾸려면 frontend/.env 에 VITE_API_BASE=... 를 넣는다
 // 정적 데모 모드(Vercel 배포): 서버 없이 public/data/*.json 으로 읽기 전용 동작한다. (npm run build:static 이 VITE_STATIC_DATA=1 을 켠다)
-export const isStaticDemo = import.meta.env?.VITE_STATIC_DATA === '1';
+// Supabase 모드: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY 가 있으면 게임/뉴스는 스냅샷, 회원/관심 게임/포럼은 Supabase로 동작한다 (docs/SUPABASE.md)
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+export const isSnapshot = import.meta.env?.VITE_STATIC_DATA === '1';
+export const hasSupabase = isSnapshot && Boolean(supabaseUrl && supabaseKey);
+// 로그인과 글쓰기가 막힌 "읽기 전용 데모"인지 (Supabase가 연결되면 아니다)
+export const isStaticDemo = isSnapshot && !hasSupabase;
 
-export const api = isStaticDemo
-  ? createStaticApi({ baseUrl: `${import.meta.env?.BASE_URL ?? '/'}data/` })
-  : createApi({ baseUrl: import.meta.env?.VITE_API_BASE ?? 'http://localhost:3000', getToken: loadToken });
+const staticApi = () => createStaticApi({ baseUrl: `${import.meta.env?.BASE_URL ?? '/'}data/` });
+
+export const api = hasSupabase
+  ? createSupabaseApi({ url: supabaseUrl, anonKey: supabaseKey, base: staticApi() })
+  : isSnapshot
+    ? staticApi()
+    : createApi({ baseUrl: import.meta.env?.VITE_API_BASE ?? 'http://localhost:3000', getToken: loadToken });

@@ -210,3 +210,12 @@ import { trailerInfo } from './lib/trailer.js';
 
 ## Codex 요청 (Codex가 백엔드/Claude 소유 모듈에 바라는 점을 여기에 적는다)
 - (아직 없음)
+
+## 2026-11-20 Supabase 선택 모드 (정적 데모)
+- 목적: Vercel 정적 데모에서 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`가 빌드 때 있으면 회원/프로필/관심 게임/포럼만 Supabase로 읽고 쓴다. 게임/뉴스는 JSON 스냅샷 그대로. 환경 변수가 없으면 기존 읽기 전용 데모. 로컬 Express+MariaDB 흐름은 변경 없음
+- `supabase/schema.sql`: profiles, user_favorites, forum_posts, forum_comments, forum_likes 테이블, 가입 시 프로필 자동 생성 트리거, RLS(읽기는 누구나, 쓰기/삭제는 본인 행만). SQL Editor에서 실행
+- `backend/scripts/exportSupabaseSeed.js` (`npm run export:supabase-seed`): 시연용 샘플 계정 20개와 글/댓글/좋아요를 `supabase/seed_demo.sql`로 만든다. 샘플 계정은 로그인 불가
+- `frontend/src/api/supabaseApi.js`: `createSupabaseApi({ url, anonKey, base })`. 응답 모양은 `api/client.js`의 `api`와 같다. 포럼 목록은 최대 500개를 받아 클라이언트에서 처리
+- `client.js`, App, Forum 연결(Supabase 모드 선택, 읽기 전용 표시 해제 등)은 Claude가 이 변경 안에서 함께 처리한다
+- 문서: `docs/SUPABASE.md` 신규, `docs/DEPLOY.md` 갱신, `.gitignore`에 `*.local` 추가(`frontend/.env.static.local`용)
+- 주의: anon key만 쓴다(공개 가능). service_role 키는 절대 쓰지 않는다. 시연 후 Supabase 프로젝트 삭제

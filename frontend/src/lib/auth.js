@@ -14,7 +14,7 @@ const defaultStorage = () => {
 export function loadToken(storage = defaultStorage()) {
   try {
     const value = storage?.getItem(TOKEN_KEY);
-    return typeof value === 'string' && /^[\w-]{20,200}$/.test(value) ? value : null;
+    return typeof value === 'string' && /^[\w.-]{20,4000}$/.test(value) ? value : null;
   } catch {
     return null;
   }

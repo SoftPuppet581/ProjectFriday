@@ -21,7 +21,7 @@ describe('토큰 저장', () => {
 
   test('모양이 이상한 값(너무 짧음, 공백, 이상한 글자)은 토큰으로 보지 않는다', () => {
     const s = memory();
-    for (const bad of ['', 'short', 'has space in the middle of a long token value', '<script>alert(1)</script>aaaaaaaa', 'a'.repeat(201)]) {
+    for (const bad of ['', 'short', 'has space in the middle of a long token value', '<script>alert(1)</script>aaaaaaaa', 'a'.repeat(4001)]) {
       s.setItem('gamecal.token', bad);
       assert.equal(loadToken(s), null, bad.slice(0, 20));
     }

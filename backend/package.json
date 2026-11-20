@@ -16,6 +16,7 @@
     "export:static": "node scripts/exportStatic.js",
     "seed:demo": "node scripts/seedDemo.js",
     "seed:demo:remove": "node scripts/seedDemo.js --remove",
+    "export:supabase-seed": "node scripts/exportSupabaseSeed.js",
     "stores:enrich": "node scripts/enrichStores.js",
     "stores:clean": "node scripts/cleanStoreUrls.js",
     "details:fill": "node scripts/fillDetails.js",

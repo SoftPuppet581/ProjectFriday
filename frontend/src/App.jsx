@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bookmark, Columns2, Gamepad2, Search } from 'lucide-react';
-import { api, isStaticDemo } from './api/client.js';
+import { api, isSnapshot, isStaticDemo } from './api/client.js';
 import CalendarView, { CalendarControls, FilterSelect } from './CalendarView.jsx';
 import { monthLabel } from './calendar.js';
 import Forum from './Forum.jsx';
@@ -81,7 +81,7 @@ function DemoNotice() {
   const date = data?.exportedAt ? new Intl.DateTimeFormat('ko-KR', { dateStyle: 'long' }).format(new Date(data.exportedAt)) : null;
   return (
     <span className="demo-note">
-      {' · '}데모 버전{date && ` (${date} 기준 저장본)`}. 가격과 뉴스는 이후 바뀌었을 수 있고, 로그인과 글쓰기는 로컬 서버에서만 쓸 수 있어요.
+      {' · '}데모 버전{date && ` (${date} 기준 저장본)`}. 가격과 뉴스는 이후 바뀌었을 수 있어요.{isStaticDemo && ' 로그인과 글쓰기는 로컬 서버에서만 쓸 수 있어요.'}
     </span>
   );
 }
@@ -355,7 +355,7 @@ export default function App() {
       </main>
       <footer className="site-footer">
         <div className="shell footer-inner">
-          <span>ProjectFriday{isStaticDemo && <DemoNotice />}</span>
+          <span>ProjectFriday{isSnapshot && <DemoNotice />}</span>
           <a href="https://rawg.io/" target="_blank" rel="noreferrer">Data from RAWG</a>
         </div>
       </footer>
