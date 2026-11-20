@@ -6,9 +6,9 @@ CORS는 `http://localhost:5173`과 `http://127.0.0.1:5173` 둘 다 허용합니�
 API 호출은 `frontend/src/api/client.js`의 `api`를 쓰세요. 주소와 에러 처리가 이미 되어 있습니다.
 
 ## 실행 방법
-1. MariaDB 실행: `"C:\Program Files\MariaDB 11.8\bin\mariadbd.exe" --console --bind-address=127.0.0.1 --port=3306`
-2. 백엔드 실행: `cd backend` 후 `npm run dev` (Node는 `C:\Program Files\nodejs`)
-3. `backend/.env`는 레포에 없습니다. `backend/.env.example`을 복사해서 채웁니다. (이 PC에는 이미 있음)
+- **레포 맨 위의 `start.bat`을 실행**하면 MariaDB, 백엔드, 프론트가 차례로 켜집니다. 끄기는 `stop.bat`입니다.
+- 개별로 켜려면: 백엔드 `cd backend` 후 `npm run dev` (Node는 `C:\Program Files\nodejs`), 프론트 `cd frontend` 후 `npm run dev`
+- `backend/.env`는 레포에 없습니다. `backend/.env.example`을 복사해서 채웁니다. (이 PC에는 이미 있음)
 
 ## Game 객체
 ```json

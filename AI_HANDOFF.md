@@ -26,11 +26,13 @@ RAWG API ──(npm run import, 이미 실행함)──▶ MariaDB ◀── Exp
 - 배포: Express+MariaDB는 Vercel에서 못 돌린다. 오늘은 로컬 실행으로 시연한다. 인터넷 공개는 하지 않는다
 - 설치 위치: Node.js는 C:\Program Files\nodejs, MariaDB는 C:\Program Files\MariaDB 11.8 (이미 열려 있던 터미널은 PATH에 없을 수 있으니 새로 열 것)
 - MariaDB는 윈도우 서비스로 등록되지 않았다. 실행: "C:\Program Files\MariaDB 11.8\bin\mariadbd.exe" --console --bind-address=127.0.0.1 --port=3306 (내 컴퓨터에서만 접속됨)
-- 백엔드 실행: `cd backend` 후 `npm run dev` → http://localhost:3000 . 프론트: `cd frontend` 후 `npm run dev` → Vite 주소(127.0.0.1:5173). CORS는 localhost와 127.0.0.1 둘 다 허용한다
+- **실행은 `start.bat` 더블클릭 한 번**: MariaDB → 백엔드(3000) → 프론트(5173) 순서로 켜고 브라우저를 연다. 이미 켜진 건 건너뛴다. 끄기는 `stop.bat`. (PowerShell 실행 정책을 건드리지 않도록 .bat이 -ExecutionPolicy Bypass로 scripts/dev-start.ps1을 실행한다)
+- 개별 실행: 백엔드 `cd backend; npm run dev` (http://localhost:3000), 프론트 `cd frontend; npm run dev` (http://127.0.0.1:5173). CORS는 localhost와 127.0.0.1 둘 다 허용한다
+- 테스트용 옵션: `start.bat -NoBrowser -Hidden` (브라우저 안 열고 서버 창 숨김), `scripts\dev-stop.ps1 -Only frontend,backend` (DB는 두고 일부만 끄기)
 
 ## 역할 분담 (파일 소유자를 나눠서 충돌을 막는다)
 **Claude Code 소유**
-- `backend/` 전부, `docs/API.md`, DB
+- `backend/` 전부, `docs/API.md`, DB, `start.bat`, `stop.bat`, `scripts/`
 - `frontend/src/api/`, `frontend/src/lib/`, `frontend/test/` : 화면과 무관한 모듈(API 호출, 날짜 계산, 즐겨찾기 저장, 트레일러 판별)과 테스트. 이미 완성. **Codex는 수정하지 말고 import해서 쓴다**
 
 **Codex 소유**
@@ -76,7 +78,8 @@ import { trailerInfo } from './lib/trailer.js';
 - RAWG 가져오기 실제 실행 완료. 첫 실행에서 응답 매핑이 맞는 것을 확인했다 (평점, 개발사, 스크린샷, 장르, 플랫폼 정상). 키는 backend/.env에 있다
 - 프론트 비화면 모듈 완성 (Claude): api 클라이언트, 날짜 계산, 저장소, 트레일러 판별. 테스트 26개 통과 (`cd frontend; npm test`)
 - 프론트 화면은 Codex가 만드는 중 (현재는 가짜 데이터로 된 초기 화면, API 호출 아직 없음)
-- 백엔드 서버는 실행 중일 수 있다 (localhost:3000). 꺼져 있으면 `cd backend; npm run dev`
+- 실행 스크립트 완성 (Claude): `start.bat`으로 처음부터 6초 만에 3개가 모두 켜지는 것을 확인했고, 재실행(이미 켜진 상태)과 `stop.bat`, DB를 껐다 켜도 데이터(492개)가 보존되는 것도 확인했다
+- 지금 프론트 화면은 Vite 에러 오버레이가 뜬다: `src/main.jsx`가 아직 없는 `./App.jsx`(와 styles.css)를 import한다. Codex가 만드는 중이라 그런 것으로 보이며 start.bat 문제가 아니다
 - index.html(루트)은 미커밋 임시 확인용 파일 (정리 대기)
 
 ## 마지막으로 한 일
