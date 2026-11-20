@@ -59,7 +59,7 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 
 ## 현재 상태
 - 레포 생성 및 문서(HandOff.md, AI_HANDOFF.md, CLAUDE.md, AGENTS.md) 작성 완료
-- 백엔드 1단계(핵심) 완성: Express MVC + MariaDB, 게임 RESTful CRUD, 월/플랫폼/장르/검색/정렬 필터, 입력 검증, 일정한 에러 형식. CRUD와 에러 케이스를 직접 호출해 확인함
+- 백엔드 1단계(핵심) 완성: Express MVC + MariaDB, 게임 RESTful CRUD, 월/플랫폼/장르/검색/정렬 필터, 입력 검증, 일정한 에러 형식. 자동 테스트 37개 통과 (npm test, MariaDB가 켜져 있어야 함)
 - DB: game_calendar (전용 사용자 gamecal, 접속 정보는 backend/.env에만 있고 git 제외). 샘플 게임 3개는 가짜 데이터
 - 프론트엔드(frontend/)는 아직 없음. Codex 담당. API 명세는 docs/API.md
 - index.html은 미커밋 임시 확인용 파일 (정리 대기)
@@ -75,5 +75,5 @@ React (Vite) ──REST/JSON──▶ Node.js + Express (MVC) ──▶ MariaDB
 - [x] backend 뼈대와 games RESTful CRUD
 - [ ] (Codex) frontend/ 생성: React + Vite, 달력 격자, 필터, 상세, 트레일러 임베드
 - [ ] (Claude) 2단계 백엔드: 즐겨찾기 API, 이번 달 요약 API 등 프론트가 요청하는 것
-- [ ] (Claude) 백엔드 자동 테스트 추가 (현재는 수동 호출로만 확인)
+- [x] (Claude) 백엔드 자동 테스트: backend에서 `npm test` (37개 통과). 별도 DB game_calendar_test를 쓰므로 운영 DB는 건드리지 않는다. API를 바꾸면 테스트도 같이 고친다
 - [ ] 임시 index.html 정리 (삭제 여부 팀장 확인)

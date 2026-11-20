@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "db:schema": "node scripts/runSql.js db/schema.sql",
-    "db:seed": "node scripts/runSql.js db/seed.sql"
+    "db:seed": "node scripts/runSql.js db/seed.sql",
+    "test": "node --test test/"
   },
   "dependencies": {
     "cors": "^2.8.6",
